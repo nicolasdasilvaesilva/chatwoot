@@ -145,11 +145,11 @@ RUN if [ "$RAILS_ENV" != "production" ]; then \
 COPY --from=pre-builder /gems/ /gems/
 COPY --from=pre-builder /app /app
 
+WORKDIR /app
 RUN chmod +x docker/entrypoints/*.sh
 
 # Copy .git_sha file from pre-builder stage
 COPY --from=pre-builder /app/.git_sha /app/.git_sha
-
 WORKDIR /app
 
 EXPOSE 3000
