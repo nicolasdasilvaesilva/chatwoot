@@ -424,12 +424,12 @@ export default {
     >
       powered by
       <a
-        href="https://fazer.ai"
+        href="https://licencas.indicafacil.app"
         target="_blank"
         rel="noopener noreferrer"
         class="text-n-slate-11 hover:text-n-brand"
       >
-        fazer.ai
+        indicafacil.app
       </a>
     </p>
     <!-- eslint-enable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->

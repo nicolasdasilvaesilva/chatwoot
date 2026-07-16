@@ -8,15 +8,15 @@ RSpec.describe 'Health Check', type: :request do
       expect(response.parsed_body['status']).to eq('woot')
     end
 
-    it 'returns fazer.ai platform info' do
+    it 'returns indicafacil.app platform info' do
       get '/health'
-      expect(response.parsed_body['platform']).to eq('fazer.ai')
+      expect(response.parsed_body['platform']).to eq('indicafacil.app')
       expect(response.parsed_body['version']).to eq(Chatwoot.config[:version])
     end
 
     it 'includes X-Platform header' do
       get '/health'
-      expect(response.headers['X-Platform']).to eq('fazer.ai')
+      expect(response.headers['X-Platform']).to eq('indicafacil.app')
     end
   end
 end

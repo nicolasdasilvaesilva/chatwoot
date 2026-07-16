@@ -10,7 +10,7 @@ Every release cut from `indica-facil/chatwoot` must embed bilingual user-notes b
 
 ## Required blocks (bilingual, both mandatory)
 
-The release body must contain both an English block and a Portuguese block, in this order. Use H2 headings with country flags **outside** the blocks to separate the two sections visually on GitHub. The fazer.ai page only renders the content **inside** the `<!-- user-notes:xx:start -->` / `<!-- user-notes:xx:end -->` markers, so the H2 headings, the flags, and any commit list above are invisible there.
+The release body must contain both an English block and a Portuguese block, in this order. Use H2 headings with country flags **outside** the blocks to separate the two sections visually on GitHub. The indicafacil.app page only renders the content **inside** the `<!-- user-notes:xx:start -->` / `<!-- user-notes:xx:end -->` markers, so the H2 headings, the flags, and any commit list above are invisible there.
 
 ```markdown
 ## 🇺🇸 English
@@ -36,12 +36,12 @@ Downstream forks (e.g. `indica-facil/chatwoot-pro`) that mirror a CE release mus
 
 ```markdown
 <!-- user-notes:en:start -->
-> Includes changes from Chatwoot fazer.ai v4.12.0-indica-facil.47.
+> Includes changes from Chatwoot indicafacil.app v4.12.0-indica-facil.47.
 ...
 <!-- user-notes:en:end -->
 
 <!-- user-notes:pt-BR:start -->
-> Inclui mudanças do Chatwoot fazer.ai v4.12.0-indica-facil.47.
+> Inclui mudanças do Chatwoot indicafacil.app v4.12.0-indica-facil.47.
 ...
 <!-- user-notes:pt-BR:end -->
 ```

@@ -207,7 +207,7 @@ Test before choosing: create a legacy `InstallationConfig` where `serialized_val
 
 Pro adds `PROTECTED_SUBSCRIPTION_KEYS` constant + `protected_subscription_key_check` validator on top of CE's version. On a CE→Pro merge the serialize block and the PROTECTED_SUBSCRIPTION_KEYS block may conflict as one hunk.
 
-- **[Pro] CE→Pro merge:** **CO** — accept CE's simplified serialize (already validated against legacy data in 4.13.0), keep Pro's `PROTECTED_SUBSCRIPTION_KEYS`, `protected_subscription_key_check` validate, and related tests. Verify with `bundle exec rspec spec/models/installation_config_spec.rb` — both the `describe 'new record defaults'` (CE) and `describe 'protected fazer.ai config keys'` (Pro) blocks must stay.
+- **[Pro] CE→Pro merge:** **CO** — accept CE's simplified serialize (already validated against legacy data in 4.13.0), keep Pro's `PROTECTED_SUBSCRIPTION_KEYS`, `protected_subscription_key_check` validate, and related tests. Verify with `bundle exec rspec spec/models/installation_config_spec.rb` — both the `describe 'new record defaults'` (CE) and `describe 'protected indicafacil.app config keys'` (Pro) blocks must stay.
 
 ### i18n files
 
