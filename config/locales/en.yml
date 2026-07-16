@@ -1,0 +1,867 @@
+# Files in the config/locales directory are used for internationalization
+# and are automatically loaded by Rails. If you want to use locales other
+# than English, add the necessary files in this directory.
+#
+# To use the locales, use `I18n.t`:
+#
+#     I18n.t 'hello'
+#
+# In views, this is aliased to just `t`:
+#
+#     <%= t('hello') %>
+#
+# To use a different locale, set it with `I18n.locale`:
+#
+#     I18n.locale = :es
+#
+# This would use the information in config/locales/es.yml.
+#
+# The following keys must be escaped otherwise they will not be retrieved by
+# the default I18n backend:
+#
+# true, false, on, off, yes, no
+#
+# Instead, surround them with single quotes.
+#
+# en:
+#   'true': 'foo'
+#
+# To learn more, please read the Rails Internationalization guide
+# available at https://guides.rubyonrails.org/i18n.html.
+
+en:
+  hello: 'Hello world'
+  internal_chat:
+    default_category_name: 'Channels'
+    default_channel_name: 'General'
+    messages:
+      deleted: "This message was deleted"
+  inbox:
+    reauthorization:
+      success: 'Channel reauthorized successfully'
+      not_required: 'Reauthorization is not required for this inbox'
+      invalid_channel: 'Invalid channel type for reauthorization'
+  auth:
+    saml:
+      invalid_email: 'Please enter a valid email address'
+      authentication_failed: 'Authentication failed. Please check your credentials and try again.'
+  messages:
+    reset_password: Request for password reset is successful. A email with instructions will be sent to your email if it exists.
+    reset_password_saml_user: This account uses SAML authentication. Password reset is not available. Please contact your administrator.
+    login_saml_user: This account uses SAML authentication. Please sign in through your organization's SAML provider.
+    saml_not_available: SAML authentication is not available in this installation.
+    inbox_deletetion_response: Your inbox deletion request will be processed in some time.
+
+  profile_settings:
+    sessions:
+      cannot_revoke_current: You cannot revoke the current session.
+
+  errors:
+    account:
+      reporting_timezone:
+        invalid: is not a valid timezone
+      support_email:
+        invalid: is not a valid email address
+    validations:
+      presence: must not be blank
+    webhook:
+      invalid: Invalid events
+    signup:
+      disposable_email: We do not allow disposable emails
+      blocked_domain: This domain is not allowed. If you believe this is a mistake, please contact support.
+      invalid_email: You have entered an invalid email
+      email_already_exists: 'You have already signed up for an account with %{email}'
+      invalid_params: 'Invalid, please check the signup paramters and try again'
+      failed: Signup failed
+    voice:
+      call_already_accepted: '%{agent_name} is already handling the call.'
+    assignment_policy:
+      not_found: Assignment policy not found
+    attachments:
+      invalid: Invalid attachment
+    upload:
+      missing_input: 'No file or URL provided'
+      invalid_url: 'Invalid URL provided'
+      fetch_failed: 'Failed to fetch file from URL'
+      fetch_failed_with_message: 'Failed to fetch file from URL: %{message}'
+      file_too_large: 'File exceeds the maximum allowed size'
+      unsupported_content_type: 'File type not supported (only images and videos are allowed)'
+      unexpected: 'An unexpected error occurred'
+    automation:
+      scheduled_message:
+        delay_out_of_range: Delay must be between 1 minute and 999 days
+        content_attachment_or_template_required: Scheduled message must have content, attachment, or template
+    scheduled_messages:
+      cannot_delete_processed: Cannot delete a scheduled message that has already been sent or failed
+    saml:
+      feature_not_enabled: SAML feature not enabled for this account
+      sso_not_enabled: SAML SSO is not enabled for this installation
+    conversations:
+      unread_counts:
+        feature_not_enabled: Conversation unread counts feature not enabled for this account
+    data_import:
+      data_type:
+        invalid: Invalid data type
+    contacts:
+      import:
+        failed: File is blank
+      export:
+        success: We will notify you once contacts export file is ready to view.
+      email:
+        invalid: Invalid email
+      phone_number:
+        invalid: should be in e164 format
+    companies:
+      domain:
+        invalid: must be a valid domain name
+      search:
+        query_missing: Specify search string with parameter q
+    messages:
+      search:
+        time_range_limit_exceeded: 'Search is limited to the last %{days} days'
+    categories:
+      locale:
+        unique: should be unique in the category and portal
+    dyte:
+      invalid_message_type: 'Invalid message type. Action not permitted'
+    slack:
+      invalid_channel_id: 'Invalid slack channel. Please try again'
+    whatsapp:
+      token_exchange_failed: 'Failed to exchange code for access token. Please try again.'
+      invalid_token_permissions: 'The access token does not have the required permissions for WhatsApp.'
+      phone_info_fetch_failed: 'Failed to fetch phone number information. Please try again.'
+      phone_number_already_exists: 'Channel already exists for this phone number: %{phone_number}, please contact support if the error persists'
+      reauthorization:
+        generic: 'Failed to reauthorize WhatsApp. Please try again.'
+        not_supported: 'Reauthorization is not supported for this type of WhatsApp channel.'
+      calls:
+        not_enabled: 'Calling is not enabled for this inbox'
+        no_recording: 'No recording file provided'
+        no_message: 'Call has no associated message'
+        sdp_offer_required: 'sdp_offer is required'
+        contact_phone_required: 'Contact phone number is required'
+        permission_request_failed: 'Failed to send call permission request'
+    openai:
+      invalid_api_key: 'OpenAI API key is invalid or revoked. Please check your key in your OpenAI dashboard.'
+    inboxes:
+      imap:
+        socket_error: Please check the network connection, IMAP address and try again.
+        no_response_error: Please check the IMAP credentials and try again.
+        host_unreachable_error: Host unreachable, Please check the IMAP address, IMAP port and try again.
+        connection_timed_out_error: Connection timed out for %{address}:%{port}
+        connection_closed_error: Connection closed.
+      smtp:
+        authentication_error: SMTP authentication failed. Please verify your login credentials.
+        connection_error: Could not connect to SMTP server. Please check the server address and port.
+        ssl_error: SSL/TLS error. Please verify your encryption settings.
+        smtp_error: SMTP server error. Please check your configuration and try again.
+      validations:
+        name: should not start or end with symbols, and it should not have < > / \ @ characters.
+      channel:
+        provider_connection:
+          wrong_phone_number: The phone number you are trying to link is not the same as the one you have configured. Please make sure the phone number is correct before scanning the QR code.
+          reconnect_loop_detected: The connection could not be re-established after several attempts. Please try reconnecting the inbox.
+    custom_filters:
+      number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
+      invalid_attribute: Invalid attribute key - [%{key}]. The key should be one of [%{allowed_keys}] or a custom attribute defined in the account.
+      invalid_operator: Invalid operator. The allowed operators for %{attribute_name} are [%{allowed_keys}].
+      invalid_query_operator: Query operator must be either "AND" or "OR".
+      invalid_value: Invalid value. The values provided for %{attribute_name} are invalid
+    custom_attribute_definition:
+      attribute_key_format: must only contain letters, numbers, underscores, hyphens, and dots
+      key_conflict: The provided key is not allowed as it might conflict with default attributes.
+    mfa:
+      already_enabled: MFA is already enabled
+      not_enabled: MFA is not enabled
+      invalid_code: Invalid verification code
+      invalid_backup_code: Invalid backup code
+      invalid_token: Invalid or expired MFA token
+      invalid_credentials: Invalid credentials or verification code
+      feature_unavailable: MFA feature is not available. Please configure encryption keys.
+    topup:
+      credits_required: Credits amount is required
+      invalid_credits: Invalid credits amount
+      invalid_option: Invalid topup option
+      plan_not_eligible: Top-ups are only available for paid plans. Please upgrade your plan first.
+      stripe_customer_not_configured: Stripe customer not configured
+      no_payment_method: No payment methods found. Please add a payment method before making a purchase.
+    reports:
+      date_range_too_long: Date range cannot exceed 6 months
+  profile:
+    mfa:
+      enabled: MFA enabled successfully
+      disabled: MFA disabled successfully
+    account_saml_settings:
+      invalid_certificate: must be a valid X.509 certificate in PEM format
+  reports:
+    period: Reporting period %{since} to %{until}
+    utc_warning: The report generated is in UTC timezone
+    agent_csv:
+      agent_name: Agent name
+      conversations_count: Assigned conversations
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+      resolution_count: Resolution Count
+      avg_customer_waiting_time: Avg customer waiting time
+    inbox_csv:
+      inbox_name: Inbox name
+      inbox_type: Inbox type
+      conversations_count: No. of conversations
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+    label_csv:
+      label_title: Label
+      conversations_count: No. of conversations
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+      avg_reply_time: Avg reply time
+      resolution_count: Resolution Count
+    team_csv:
+      team_name: Team name
+      conversations_count: Conversations count
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+      resolution_count: Resolution Count
+      avg_customer_waiting_time: Avg customer waiting time
+    conversation_csv:
+      conversations_count: Conversations
+      incoming_messages_count: Messages received
+      outgoing_messages_count: Messages sent
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+      resolution_count: Resolution count
+      avg_customer_waiting_time: Avg customer waiting time
+    conversation_traffic_csv:
+      timezone: Timezone
+    sla_csv:
+      conversation_id: Conversation ID
+      sla_policy_breached: SLA Policy
+      assignee: Assignee
+      team: Team
+      inbox: Inbox
+      labels: Labels
+      conversation_link: Link to the Conversation
+      breached_events: Breached Events
+    default_group_by: day
+    csat:
+      headers:
+        contact_name: Contact Name
+        contact_email_address: Contact Email Address
+        contact_phone_number: Contact Phone Number
+        link_to_the_conversation: Link to the conversation
+        agent_name: Agent Name
+        rating: Rating
+        feedback: Feedback Comment
+        recorded_at: Recorded date
+        review_notes: Review Notes
+  notifications:
+    notification_title:
+      conversation_creation: 'A conversation (#%{display_id}) has been created in %{inbox_name}'
+      conversation_assignment: 'A conversation (#%{display_id}) has been assigned to you'
+      assigned_conversation_new_message: 'A new message is created in conversation (#%{display_id})'
+      conversation_mention: 'You have been mentioned in conversation (#%{display_id})'
+      sla_missed_first_response: 'SLA target first response missed for conversation (#%{display_id})'
+      sla_missed_next_response: 'SLA target next response missed for conversation (#%{display_id})'
+      sla_missed_resolution: 'SLA target resolution missed for conversation (#%{display_id})'
+    attachment: 'Attachment'
+    no_content: 'No content'
+  conversations:
+    captain:
+      handoff: 'Transferring to another agent for further assistance.'
+    messages:
+      instagram_story_content: '%{story_sender} mentioned you in the story: '
+      instagram_deleted_story_content: This story is no longer available.
+      instagram_shared_story_content: 'Shared story'
+      instagram_shared_post_content: 'Shared post'
+      deleted: This message was deleted
+      whatsapp:
+        list_button_label: 'Choose an item'
+        call_permission_request_body: 'We would like to call you regarding your conversation.'
+        unsupported_message: 'This message is unavailable.'
+      voice_call:
+        twilio: 'Voice Call'
+        whatsapp: 'WhatsApp Call'
+      delivery_status:
+        error_code: 'Error code: %{error_code}'
+    activity:
+      captain:
+        resolved: 'Conversation was marked resolved by %{user_name} due to inactivity'
+        resolved_with_reason: 'Conversation was marked resolved by %{user_name} (%{reason})'
+        resolved_by_tool: 'Conversation was marked resolved by %{user_name}: %{reason}'
+        open: 'Conversation was marked open by %{user_name}'
+        open_with_reason: 'Conversation was marked open by %{user_name} (%{reason})'
+        auto_opened_after_agent_reply: 'Conversation was marked open automatically after an agent reply'
+      agent_bot:
+        error_moved_to_open: 'Conversation was marked open by system due to an error with the agent bot.'
+      status:
+        resolved: 'Conversation was marked resolved by %{user_name}'
+        contact_resolved: 'Conversation was resolved by %{contact_name}'
+        open: 'Conversation was reopened by %{user_name}'
+        pending: 'Conversation was marked as pending by %{user_name}'
+        snoozed: 'Conversation was snoozed by %{user_name}'
+        auto_resolved_days: 'Conversation was marked resolved by system due to %{count} days of inactivity'
+        auto_resolved_hours: 'Conversation was marked resolved by system due to %{count} hours of inactivity'
+        auto_resolved_minutes: 'Conversation was marked resolved by system due to %{count} minutes of inactivity'
+        system_auto_open: System reopened the conversation due to a new incoming message.
+      priority:
+        added: '%{user_name} set the priority to %{new_priority}'
+        updated: '%{user_name} changed the priority from %{old_priority} to %{new_priority}'
+        removed: '%{user_name} removed the priority'
+      assignee:
+        self_assigned: '%{user_name} self-assigned this conversation'
+        assigned: 'Assigned to %{assignee_name} by %{user_name}'
+        removed: 'Conversation unassigned by %{user_name}'
+      team:
+        assigned: 'Assigned to %{team_name} by %{user_name}'
+        assigned_with_assignee: 'Assigned to %{assignee_name} via %{team_name} by %{user_name}'
+        removed: 'Unassigned from %{team_name} by %{user_name}'
+      labels:
+        added: '%{user_name} added %{labels}'
+        removed: '%{user_name} removed %{labels}'
+      sla:
+        added: '%{user_name} added SLA policy %{sla_name}'
+        removed: '%{user_name} removed SLA policy %{sla_name}'
+      linear:
+        issue_created: 'Linear issue %{issue_id} was created by %{user_name}'
+        issue_linked: 'Linear issue %{issue_id} was linked by %{user_name}'
+        issue_unlinked: 'Linear issue %{issue_id} was unlinked by %{user_name}'
+      group_participants:
+        add:
+          single: '%{author_name} added %{contact_name} to the group'
+          multiple: '%{author_name} added %{contact_names} and %{last_contact_name} to the group'
+        join: '%{contact_name} joined using the group invite link'
+        leave: '%{contact_name} left the group'
+        remove:
+          single: '%{author_name} removed %{contact_name} from the group'
+          multiple: '%{author_name} removed %{contact_names} and %{last_contact_name} from the group'
+        promote:
+          single: '%{author_name} promoted %{contact_name} to admin'
+          multiple: '%{author_name} promoted %{contact_names} and %{last_contact_name} to admin'
+        demote:
+          single: '%{author_name} demoted %{contact_name} to member'
+          multiple: '%{author_name} demoted %{contact_names} and %{last_contact_name} to member'
+      groups_update:
+        subject_changed: '%{author_name} changed the group name to "%{value}"'
+        description_changed: '%{author_name} changed the group description'
+        description_removed: '%{author_name} removed the group description'
+        restrict_enabled: '%{author_name} changed the settings so only admins can edit the group settings'
+        restrict_disabled: '%{author_name} changed the settings so all members can edit the group settings'
+        announce_enabled: "%{author_name} changed this group's settings to allow only admins to send messages to this group"
+        announce_disabled: "%{author_name} changed this group's settings to allow all members to send messages to this group"
+        member_add_mode_enabled: "%{author_name} changed this group's setting to allow all members to add others to this group"
+        member_add_mode_disabled: "%{author_name} changed this group's setting to allow only admins to add others to this group"
+        join_approval_mode_enabled: '%{author_name} turned on admin approval to join this group'
+        join_approval_mode_disabled: '%{author_name} turned off admin approval to join this group'
+        invite_link_reset: "%{author_name} reset this group's invite link"
+        membership_request_created: '%{contact_name} wants to join the group'
+        membership_request_revoked: '%{contact_name} no longer wants to join the group'
+        icon_changed: '%{author_name} changed the group image'
+      whatsapp_call:
+        permission_requested: 'Sent a call permission request to %{contact_name}.'
+        permission_granted: '%{contact_name} accepted the call permission request.'
+      csat:
+        not_sent_due_to_messaging_window: 'CSAT survey not sent due to outgoing message restrictions'
+      auto_resolve:
+        not_sent_due_to_messaging_window: 'Auto-resolve message not sent due to outgoing message restrictions'
+      muted: '%{user_name} has muted the conversation'
+      unmuted: '%{user_name} has unmuted the conversation'
+      recurring_message_failed: 'Recurring scheduled message failed to send. Next occurrence scheduled for %{next_date}.'
+      recurring_message_completed: 'Recurring scheduled message series completed after %{count} occurrences.'
+      recurring_message_cancelled: 'Recurring scheduled message has been stopped by %{agent}.'
+      unknown_agent: 'Unknown'
+      auto_resolution_message: 'Resolving the conversation as it has been inactive for a while. Please start a new conversation if you need further assistance.'
+    templates:
+      greeting_message_body: '%{account_name} typically replies in a few hours.'
+      ways_to_reach_you_message_body: 'Give the team a way to reach you.'
+      email_input_box_message_body: 'Get notified by email'
+      csat_input_message_body: 'Please rate the conversation'
+    reply:
+      email:
+        header:
+          notifications: 'Notifications'
+          from_with_name: '%{assignee_name} from %{inbox_name} <%{from_email}>'
+          reply_with_name: '%{assignee_name} from %{inbox_name} <reply+%{reply_email}>'
+          friendly_name: '%{sender_name} from %{business_name} <%{from_email}>'
+          professional_name: '%{business_name} <%{from_email}>'
+      channel_email:
+        header:
+          reply_with_name: '%{assignee_name} from %{inbox_name} <%{from_email}>'
+          reply_with_inbox_name: '%{inbox_name} <%{from_email}>'
+      email_subject: 'New messages on this conversation'
+      transcript_subject: 'Conversation Transcript'
+    survey:
+      response: 'Please rate this conversation, %{link}'
+  contacts:
+    online:
+      delete: '%{contact_name} is Online, please try again later'
+    sync_group:
+      not_a_group: 'Contact is not a group'
+      no_identifier: 'Contact does not have a group identifier'
+      no_supported_inbox: 'No inbox with group sync support found for this contact'
+      metadata_unavailable: 'Could not retrieve group metadata from the provider'
+  integration_apps:
+    # Note: webhooks and dashboard_apps don't need short_description as they use different modal components
+    dashboard_apps:
+      name: 'Dashboard Apps'
+      description: 'Dashboard Apps allow you to create and embed applications that display user information, orders, or payment history, providing more context to your customer support agents.'
+    dyte:
+      name: 'Dyte'
+      short_description: 'Start video/voice calls with customers directly from Chatwoot.'
+      description: 'Dyte is a product that integrates audio and video functionalities into your application. With this integration, your agents can start video/voice calls with your customers directly from Chatwoot.'
+      meeting_name: '%{agent_name} has started a meeting'
+    slack:
+      name: 'Slack'
+      short_description: 'Receive notifications and respond to conversations directly in Slack.'
+      description: "Integrate Chatwoot with Slack to keep your team in sync. This integration allows you to receive notifications for new conversations and respond to them directly within Slack's interface."
+    webhooks:
+      name: 'Webhooks'
+      description: 'Webhook events provide real-time updates about activities in your Chatwoot account. You can subscribe to your preferred events, and Chatwoot will send you HTTP callbacks with the updates.'
+    dialogflow:
+      name: 'Dialogflow'
+      short_description: 'Build chatbots to handle initial queries before transferring to agents.'
+      description: 'Build chatbots with Dialogflow and easily integrate them into your inbox. These bots can handle initial queries before transferring them to a customer service agent.'
+    google_translate:
+      name: 'Google Translate'
+      short_description: 'Automatically translate customer messages for agents.'
+      description: "Integrate Google Translate to help agents easily translate customer messages. This integration automatically detects the language and converts it to the agent's or admin's preferred language."
+    openai:
+      name: 'OpenAI'
+      short_description: 'AI-powered reply suggestions, summarization, and message enhancement.'
+      description: 'Leverage the power of large language models from OpenAI with the features such as reply suggestions, summarization, message rephrasing, spell-checking, and label classification.'
+    linear:
+      name: 'Linear'
+      short_description: 'Create and link Linear issues directly from conversations.'
+      description: 'Create issues in Linear directly from your conversation window. Alternatively, link existing Linear issues for a more streamlined and efficient issue tracking process.'
+      attachment_link_title: 'Conversation (#%{conversation_id}) with %{name}'
+    notion:
+      name: 'Notion'
+      short_description: 'Integrate databases, documents and pages directly with Captain.'
+      description: 'Connect your Notion workspace to enable Captain to access and generate intelligent responses using content from your databases, documents, and pages to provide more contextual customer support.'
+    shopify:
+      name: 'Shopify'
+      short_description: 'Access order details and customer data from your Shopify store.'
+      description: 'Connect your Shopify store to access order details, customer information, and product data directly within your conversations and helps your support team provide faster, more contextual assistance to your customers.'
+    leadsquared:
+      name: 'LeadSquared'
+      short_description: 'Sync your contacts and conversations with LeadSquared CRM.'
+      description: 'Sync your contacts and conversations with LeadSquared CRM. This integration automatically creates leads in LeadSquared when new contacts are added, and logs conversation activity to provide your sales team with complete context.'
+  captain:
+    copilot_message_required: Message is required
+    copilot_error: 'Please connect an assistant to this inbox to use Copilot'
+    copilot_limit: 'You are out of Copilot credits. You can buy more credits from the billing section.'
+    upgrade: 'Upgrade your plan to enable Captain AI'
+    disabled: 'Captain AI is disabled for this account.'
+    api_key_missing: 'Captain AI API key is not configured.'
+    copilot:
+      using_tool: 'Using tool %{function_name}'
+      completed_tool_call: 'Completed %{function_name} tool call'
+      invalid_tool_call: 'Invalid tool call'
+      tool_not_available: 'Tool not available'
+    documents:
+      limit_exceeded: 'Document limit exceeded'
+      pdf_format_error: 'must be a PDF file'
+      pdf_size_error: 'must be less than 10MB'
+      sync_not_supported_for_pdf: 'Sync is not supported for PDF documents'
+      sync_only_available_documents: 'Sync is only available for processed documents'
+      sync_already_in_progress: 'Document sync is already in progress'
+      pdf_upload_failed: 'Failed to upload PDF to OpenAI'
+      pdf_upload_success: 'PDF uploaded successfully with file_id: %{file_id}'
+      pdf_processing_failed: 'Failed to process PDF document %{document_id}: %{error}'
+      pdf_processing_success: 'Successfully processed PDF document %{document_id}'
+      faq_generation_complete: 'FAQ generation complete. Total FAQs created: %{count}'
+      using_paginated_faq: 'Using paginated FAQ generation for document %{document_id}'
+      using_standard_faq: 'Using standard FAQ generation for document %{document_id}'
+      response_creation_error: 'Error in creating response document: %{error}'
+      missing_openai_file_id: 'Document must have openai_file_id for paginated processing'
+      openai_api_error: 'OpenAI API Error: %{error}'
+      starting_paginated_faq: 'Starting paginated FAQ generation (%{pages_per_chunk} pages per chunk)'
+      stopping_faq_generation: 'Stopping processing. Reason: %{reason}'
+      paginated_faq_complete: 'Paginated generation complete. Total FAQs: %{total_faqs}, Pages processed: %{pages_processed}'
+      processing_pages: 'Processing pages %{start}-%{end} (iteration %{iteration})'
+      chunk_generated: 'Chunk generated %{chunk_faqs} FAQs. Total so far: %{total_faqs}'
+      page_processing_error: 'Error processing pages %{start}-%{end}: %{error}'
+    custom_tool:
+      slug_generation_failed: 'Unable to generate unique slug after 5 attempts'
+      limit_exceeded: 'You can create a maximum of %{limit} custom tools per account'
+  public_portal:
+    search:
+      search_placeholder: Search for article by title or body...
+      empty_placeholder: No results found.
+      loading_placeholder: Searching...
+      results_title: Search results
+      results: Search Results
+      results_for: "Search Results for '%{query}'"
+      no_results: "No results found for '%{query}'"
+      found_results:
+        one: Found 1 result
+        other: 'Found %{count} results'
+      submit: Search
+    toc_header: 'On this page'
+    sidebar:
+      help_center: Help Center
+      categories: Categories
+      language: Language
+      theme: Theme
+      open_sidebar: Open sidebar
+      close_sidebar: Close sidebar
+      browse: Browse
+      back_to_category: Back to %{name}
+      browse_by_topic: Browse by topic
+      browse_by_topic_subtitle: Find guides, tutorials, and answers organised by category.
+      popular_articles: Popular articles
+      popular_articles_subtitle: What other people are reading right now.
+      popular_label: 'Popular topics:'
+      authors_others: "%{names} and %{count} others"
+      primary_nav: Primary
+    hero:
+      sub_title: Search for the articles here or browse the categories below.
+    common:
+      home: Home
+      last_updated_on: Last updated on %{last_updated_on}
+      view_all_articles: View all
+      article: article
+      articles: articles
+      author: author
+      authors: authors
+      other: other
+      others: others
+      by: By
+      no_articles: There are no articles here
+      previous: Previous
+      next: Next
+    article_actions:
+      label: Open in
+      view_markdown: View as Markdown
+      open_in_chatgpt: Open in ChatGPT
+      open_in_claude: Open in Claude
+      llm_prompt: "Read the following article and help me understand it: %{url}"
+    footer:
+      made_with: Made with
+    header:
+      go_to_homepage: Website
+      visit_website: Visit website
+      appearance:
+        title: Appearance
+        system: System
+        light: Light
+        dark: Dark
+      featured_articles: Featured Articles
+      uncategorized: Uncategorized
+    404:
+      title: Page not found
+      description: We couldn't find the page you were looking for.
+      back_to_home: Go to home page
+    not_active:
+      title: Help Center Unavailable
+      description: Please contact the site administrator for more information.
+      action: If you are the administrator, please upgrade your plan to restore access.
+  slack_unfurl:
+    fields:
+      name: Name
+      email: Email
+      phone_number: Phone
+      company_name: Company
+      inbox_name: Inbox
+      inbox_type: Inbox Type
+    button: Open conversation
+  time_units:
+    days:
+      one: '%{count} day'
+      other: '%{count} days'
+    hours:
+      one: '%{count} hour'
+      other: '%{count} hours'
+    minutes:
+      one: '%{count} minute'
+      other: '%{count} minutes'
+    seconds:
+      one: '%{count} second'
+      other: '%{count} seconds'
+  auto_assignment:
+    default_policy_name: 'Default Policy'
+    policy_actor: 'Automation System via %{policy_name}'
+  automation:
+    system_name: 'Automation System'
+  crm:
+    no_message: 'No messages in conversation'
+    attachment: '[Attachment: %{type}]'
+    no_content: '[No content]'
+    created_activity: |
+      New conversation started on %{brand_name}
+
+      Channel: %{channel_info}
+      Created: %{formatted_creation_time}
+      Conversation ID: %{display_id}
+      View in %{brand_name}: %{url}
+    transcript_activity: |
+      Conversation Transcript from %{brand_name}
+
+      Channel: %{channel_info}
+      Conversation ID: %{display_id}
+      View in %{brand_name}: %{url}
+
+      Transcript:
+      %{format_messages}
+  agent_capacity_policy:
+    inbox_already_assigned: 'Inbox has already been assigned to this policy'
+  portals:
+    articles:
+      captain_not_available: 'Translation requires Captain to be enabled for this account'
+      locale_not_available: 'Locale not available in this portal'
+      category_not_found: 'Category not found in this portal'
+      no_articles_found: 'No articles found to process'
+      invalid_status: 'Invalid status value'
+    send_instructions:
+      email_required: 'Email is required'
+      invalid_email_format: 'Invalid email format'
+      custom_domain_not_configured: 'Custom domain is not configured'
+      instructions_sent_successfully: 'Instructions sent successfully'
+      subject: 'Finish setting up %{custom_domain}'
+    ssl_status:
+      custom_domain_not_configured: 'Custom domain is not configured'
+  recurring_scheduled_messages:
+    description:
+      daily:
+        one: "Every day"
+        other: "Every %{count} days"
+      weekly:
+        one: "Every week"
+        other: "Every %{count} weeks"
+      weekly_on: "%{prefix} on %{days}"
+      monthly:
+        one: "Monthly"
+        other: "Every %{count} months"
+      monthly_on_weekday: "%{prefix} on the %{ordinal} %{weekday}"
+      yearly:
+        one: "Every year"
+        other: "Every %{count} years"
+      until_date: "until %{date}"
+      after_count:
+        one: "%{count} occurrence"
+        other: "%{count} occurrences"
+      ordinals:
+        first: "first"
+        second: "second"
+        third: "third"
+        fourth: "fourth"
+        fifth: "fifth"
+        last: "last"
+  mailer:
+    common:
+      hi: Hi %{name}
+      hi_plain: Hi
+      hello: Hello,
+      hello_there: Hello there,
+      click_here: "Click <a href=\"%{url}\">here</a>"
+      powered_by: Powered by
+      sent_by_prefix: This email was sent by
+      you: You
+      attachment_click_to_view: "Attachment [<a href=\"%{url}\" target=\"_blank\">Click here to view</a>]"
+      click_here_to_get_cracking: "Click <a href=\"%{url}\">here</a> to get cracking."
+      the_chatwoot_team: The %{brand_name} Team
+    agent_notifications:
+      conversation_creation:
+        subject: "%{agent_name}, A new conversation [ID - %{conversation_id}] has been created in %{inbox_name}."
+        body: "A new conversation (<a href=\"%{url}\">#%{conversation_id}</a>) has been created in %{inbox_name}. <strong>%{contact_name}</strong> wrote:"
+      conversation_assignment:
+        subject: "%{agent_name}, A new conversation [ID - %{conversation_id}] has been assigned to you."
+        body: Time to save the world. A new conversation has been assigned to you
+      conversation_mention:
+        subject: "%{agent_name}, You have been mentioned in conversation [ID - %{conversation_id}]"
+        body: "You've been mentioned in a conversation. <b>%{sender_name}</b> wrote:"
+        previous_messages: "Previous messages:"
+        view_message: View Message
+      assigned_conversation_new_message:
+        subject: "%{agent_name}, New message in your assigned conversation [ID - %{conversation_id}]."
+        body: You have received a new message in your assigned conversation.
+      participating_conversation_new_message:
+        subject: "%{agent_name}, New message in your participating conversation [ID - %{conversation_id}]."
+        body: You have received a new message in a conversation you are participating.
+      sla_missed_first_response:
+        subject: Conversation [ID - %{conversation_id}] missed SLA for first response
+        body: has missed the SLA for first response under policy
+        full_body: "Conversation #%{conversation_id} in %{inbox_name} has missed the SLA for first response under policy %{sla_policy_name}."
+        action: Please address immediately.
+      sla_missed_next_response:
+        subject: Conversation [ID - %{conversation_id}] missed SLA for next response
+        body: has missed the SLA for next response under policy
+        full_body: "Conversation #%{conversation_id} in %{inbox_name} has missed the SLA for next response under policy %{sla_policy_name}."
+        action: Please address immediately.
+      sla_missed_resolution:
+        subject: Conversation [ID - %{conversation_id}] missed SLA for resolution time
+        body: has missed the SLA for resolution time under policy
+        full_body: "Conversation #%{conversation_id} in %{inbox_name} has missed the SLA for resolution time under policy %{sla_policy_name}."
+        action: Please address immediately.
+    administrator_notifications:
+      channel_notifications:
+        whatsapp_disconnect:
+          subject: Your Whatsapp connection has expired
+          body: Your Whatsapp Access has expired.
+          action: Please reconnect Whatsapp to continue receiving messages.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+        facebook_disconnect:
+          subject: Your Facebook page connection has expired
+          body: Your Facebook Inbox Access has expired.
+          action: Please reconnect Facebook Page to continue receiving messages.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+        instagram_disconnect:
+          subject: Your Instagram connection has expired
+          body: Your Instagram Inbox Access has expired.
+          action: Please reconnect Instagram to continue receiving messages.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+        tiktok_disconnect:
+          subject: Your TikTok connection has expired
+          body: Your TikTok Inbox Access has expired.
+          action: Please reconnect TikTok to continue receiving messages.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+        email_disconnect:
+          subject: Your email inbox has been disconnected. Please update the credentials for SMTP/IMAP
+          body: Your email inbox has been disconnected due to configuration errors.
+          action: Please update it to continue receiving messages.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+      account_notifications:
+        automation_rule_disabled:
+          subject: Automation rule disabled due to validation errors.
+          body: "The automation rule <b>%{rule_name}</b> has been disabled because it has invalid conditions."
+          explanation: This typically happens when you delete any custom attributes which are still being used in automation rules.
+          action: "Click <a href=\"%{url}\">here</a> to update the conditions."
+        contact_import_complete:
+          subject: Contact Import Completed
+          body: Your contact import has been completed. Please check the contacts tab to view the imported contacts.
+          imported_records: "Number of records imported: %{count}"
+          failed_records: "Number of records failed: %{count}"
+          click_to_view_imported: "Click <a href=\"%{url}\">here</a> to view the imported contacts."
+          click_to_view_failed: "Click <a href=\"%{url}\" target=\"_blank\">here</a> to view failed records."
+        contact_import_failed:
+          subject: Contact Import Failed
+          body: Your contact import has failed. It appears that the CSV file you uploaded may not be valid. We kindly request that you review the file and ensure it complies with the required format.
+        contact_export_complete:
+          subject: Your contact's export file is available to download.
+          body: Your contact export file is ready to download.
+          action: "Click <a href=\"%{url}\">here</a> to download the export file."
+        account_deletion_user_initiated:
+          subject: Your %{brand_name} account deletion has been scheduled
+          body: "An account administrator has requested deletion of the %{brand_name} account <strong>%{account_name}</strong>. The account is scheduled for deletion on <strong>%{deletion_date}</strong>."
+          what_happens_next: What happens next?
+          remains_accessible: The account will remain accessible until the scheduled deletion date.
+          data_permanently_removed: After that, all data including conversations, contacts, integrations, and settings will be permanently removed.
+          cancel_request: "If you change your mind before the deletion date, you can <a href=\"%{url}\">cancel this request</a> by visiting your account settings."
+        account_deletion_for_inactivity:
+          subject: Your %{brand_name} account is scheduled for deletion due to inactivity
+          body: "We've noticed that your %{brand_name} account <strong>%{account_name}</strong> has been inactive for some time. Because of this, it's scheduled for deletion on <strong>%{deletion_date}</strong>."
+          how_to_keep: How do I keep my account?
+          how_to_keep_body: "Log in to your %{brand_name} account before <strong>%{deletion_date}</strong>. From your account settings, you can <a href=\"%{url}\">cancel the deletion</a> and continue using your account."
+          what_if_no_cancel: What happens if I don't cancel?
+          what_if_no_cancel_body: "Unless you cancel the account deletion before <strong>%{deletion_date}</strong>, your account and all associated data, including conversations, contacts, reports, and settings, will be permanently deleted."
+          why_doing_this: Why are we doing this?
+          why_doing_this_body: To keep things secure and efficient, we regularly remove inactive accounts so our systems remain optimized for active teams.
+          contact_us: "If you have any questions, feel free to reach us at <a href=\"mailto:%{email}\">%{email}</a>."
+      integrations_notifications:
+        slack_disconnect:
+          subject: Your Slack integration has expired
+          body: Your Slack integration has expired. To continue receiving messages on Slack, please delete the integration and connect your workspace again.
+          click_to_reconnect: "Click <a href=\"%{url}\">here</a> to re-connect."
+        dialogflow_disconnect:
+          subject: Your Dialogflow integration was disconnected
+          body: Your Dialogflow integration was disconnected because of permission issues. To resolve this, please delete the integration from the admin dashboard and reconnect it using new credentials.
+      account_compliance:
+        account_deleted:
+          subject: Account Deletion Notice for %{account_id} - %{account_name}
+          body: This is a notification to inform you that an account has been permanently deleted from your %{brand_name} instance.
+          installation: "%{brand_name} Installation:"
+          account_id: "Account ID:"
+          account_name: "Account Name:"
+          deletion_due_at: "Deletion due at:"
+          deleted_at: "Deleted At:"
+          deletion_reason: "Deletion Reason:"
+          deleted_users: "Deleted Users (%{count}):"
+          deleted_users_none: "Deleted Users: None"
+          user_id: "User ID:"
+          compliance_notice: This email serves as a record for compliance purposes.
+          thank_you: Thank you,
+          system_name: "%{brand_name} System"
+    team_notifications:
+      automation:
+        subject: This email has been sent via automation rule actions.
+        automation_system: This is the mail from Automation System
+    portal:
+      cname_instructions:
+        greeting: Hello there,
+        intro: "To complete the setup of your help center, you'll need to update the DNS settings for your custom domain: <strong>%{domain}</strong>."
+        add_cname: "Please add the following CNAME record to your DNS provider's configuration:"
+        steps_title: "Step-by-step Instructions:"
+        step_1: Log in to your DNS provider's dashboard
+        step_2: Go to the DNS management section
+        step_3: Create a new CNAME record using the information above
+        step_4: Save the changes and allow up to 24 hours for the DNS to propagate
+        ssl_notice: Once the DNS record is live, your custom domain will automatically be secured with an SSL certificate.
+        support_message: If you have any questions or need help, feel free to reach out to our support team. We're here to assist you.
+    devise:
+      confirmation_instructions:
+        secure_link: this secure link
+        button_fallback_html: "If the button does not work, open %{link}."
+        labels:
+          invited_by: Invited by
+          workspace: Workspace
+          sign_in_method: Sign-in method
+          sign_in_method_value: Single Sign-On (SSO)
+          new_email: New email
+        welcome:
+          eyebrow: Welcome
+          heading: Confirm your email to get started
+          intro_html: "Welcome to %{brand_name}. We just need to verify your email address before you can start using your account."
+          supporting_text: This only takes a moment.
+          action_text: Confirm my account
+        email_update:
+          eyebrow: Email update
+          heading: Confirm your new email address
+          intro_html: "We received a request to update the email address on your %{brand_name} account."
+          supporting_text: Confirm the new address below to finish the change.
+          action_text: Confirm email address
+        account_ready:
+          eyebrow: Account ready
+          heading: Your account is ready
+          intro_html: "Your %{brand_name} account is already active."
+          supporting_text: Use the button below to sign in and continue where you left off.
+          action_text: Open my account
+        invitation:
+          eyebrow: Workspace invitation
+          heading_with_account: "You're invited to join %{account_name}"
+          heading_default: "You're invited to try %{brand_name}"
+          intro_with_account_html: "%{inviter_name} invited you to join the %{account_name} workspace on %{brand_name}."
+          intro_default_html: "%{inviter_name} invited you to try %{brand_name}."
+          supporting_text: Create your account to start collaborating with your team.
+          action_text: Accept invitation
+        sso_access_ready:
+          heading: Your access is ready
+          intro_html: "Your %{brand_name} access is already set up."
+          supporting_html: "Use your organization's Single Sign-On (SSO) portal to access %{brand_name}."
+          info_title: "Sign in with your organization's SSO"
+          info_text_html: "You won't need a separate password for %{brand_name}. Start from your company identity provider portal."
+        sso_invitation:
+          intro_with_account_html: "%{inviter_name} invited you to access the %{account_name} workspace on %{brand_name}."
+          intro_default_html: "%{inviter_name} invited you to access %{brand_name}."
+          supporting_html: "Your organization uses Single Sign-On (SSO), so you won't need to create a separate password."
+          info_title: "Use your organization's SSO portal"
+          info_text_html: "Continue from your company identity provider portal to access %{brand_name}."
+      reset_password_instructions:
+        greeting_html: Hello %{name}!
+        body_html: Someone has requested a link to change your password. You can do this through the link below.
+        action: Change my password
+        copy_paste_html: "Copy and paste the URL into your browser if the link above doesn't work:"
+        ignore_html: If you didn't request this, please ignore this email.
+        no_change_html: Your password won't change until you access the link above and create a new one.
+      password_change:
+        greeting_html: Hello %{name}!
+        body_html: We're contacting you to notify you that your password has been changed.
+      unlock_instructions:
+        greeting_html: Hello %{name}!
+        body_html: Your account has been locked due to an excessive number of unsuccessful sign in attempts.
+        action_prompt_html: "Click the link below to unlock your account:"
+        unlock_account: Unlock my account
+  super_admin:
+    push_diagnostics:
+      user_not_found: 'User not found.'
+      no_subscriptions_to_test: 'Select at least one subscription to test.'
+      no_subscriptions_to_delete: 'Select at least one subscription to delete.'
+      subscriptions_deleted: "Deleted %{count} subscription(s). The user's device(s) will re-register on next app launch."
