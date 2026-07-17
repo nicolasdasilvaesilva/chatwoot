@@ -429,7 +429,7 @@ export default {
         rel="noopener noreferrer"
         class="text-n-slate-11 hover:text-n-brand"
       >
-        indicafacil.app
+        Indica Fácil Tecnologia e Serviços Digitais
       </a>
     </p>
     <!-- eslint-enable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->

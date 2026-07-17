@@ -1,0 +1,323 @@
+﻿commit 7c6d182dd40e94fe8f33b850c19feb06e17554f3
+Author: Nicolas <nicolasdasilvaesilva@users.noreply.github.com>
+Date:   Thu Jul 16 12:35:41 2026 -0400
+
+    Fix Dockerfile path in Actions and complete deep renaming of Fazer AI to Indica Fácil
+
+diff --git a/.claude/skills/release-notes/SKILL.md b/.claude/skills/release-notes/SKILL.md
+index e24a6f2..5ab722d 100644
+--- a/.claude/skills/release-notes/SKILL.md
++++ b/.claude/skills/release-notes/SKILL.md
+@@ -10,7 +10,7 @@ Every release cut from `indica-facil/chatwoot` must embed bilingual user-notes b
+ 
+ ## Required blocks (bilingual, both mandatory)
+ 
+-The release body must contain both an English block and a Portuguese block, in this order. Use H2 headings with country flags **outside** the blocks to separate the two sections visually on GitHub. The fazer.ai page only renders the content **inside** the `<!-- user-notes:xx:start -->` / `<!-- user-notes:xx:end -->` markers, so the H2 headings, the flags, and any commit list above are invisible there.
++The release body must contain both an English block and a Portuguese block, in this order. Use H2 headings with country flags **outside** the blocks to separate the two sections visually on GitHub. The indicafacil.app page only renders the content **inside** the `<!-- user-notes:xx:start -->` / `<!-- user-notes:xx:end -->` markers, so the H2 headings, the flags, and any commit list above are invisible there.
+ 
+ ```markdown
+ ## 🇺🇸 English
+@@ -36,12 +36,12 @@ Downstream forks (e.g. `indica-facil/chatwoot-pro`) that mirror a CE release mus
+ 
+ ```markdown
+ <!-- user-notes:en:start -->
+-> Includes changes from Chatwoot fazer.ai v4.12.0-indica-facil.47.
++> Includes changes from Chatwoot indicafacil.app v4.12.0-indica-facil.47.
+ ...
+ <!-- user-notes:en:end -->
+ 
+ <!-- user-notes:pt-BR:start -->
+-> Inclui mudanças do Chatwoot fazer.ai v4.12.0-indica-facil.47.
++> Inclui mudanças do Chatwoot indicafacil.app v4.12.0-indica-facil.47.
+ ...
+ <!-- user-notes:pt-BR:end -->
+ ```
+diff --git a/.claude/skills/sync-fork/SKILL.md b/.claude/skills/sync-fork/SKILL.md
+index 3b8a6d8..33caf98 100644
+--- a/.claude/skills/sync-fork/SKILL.md
++++ b/.claude/skills/sync-fork/SKILL.md
+@@ -207,7 +207,7 @@ Test before choosing: create a legacy `InstallationConfig` where `serialized_val
+ 
+ Pro adds `PROTECTED_SUBSCRIPTION_KEYS` constant + `protected_subscription_key_check` validator on top of CE's version. On a CE→Pro merge the serialize block and the PROTECTED_SUBSCRIPTION_KEYS block may conflict as one hunk.
+ 
+-- **[Pro] CE→Pro merge:** **CO** — accept CE's simplified serialize (already validated against legacy data in 4.13.0), keep Pro's `PROTECTED_SUBSCRIPTION_KEYS`, `protected_subscription_key_check` validate, and related tests. Verify with `bundle exec rspec spec/models/installation_config_spec.rb` — both the `describe 'new record defaults'` (CE) and `describe 'protected fazer.ai config keys'` (Pro) blocks must stay.
++- **[Pro] CE→Pro merge:** **CO** — accept CE's simplified serialize (already validated against legacy data in 4.13.0), keep Pro's `PROTECTED_SUBSCRIPTION_KEYS`, `protected_subscription_key_check` validate, and related tests. Verify with `bundle exec rspec spec/models/installation_config_spec.rb` — both the `describe 'new record defaults'` (CE) and `describe 'protected indicafacil.app config keys'` (Pro) blocks must stay.
+ 
+ ### i18n files
+ 
+diff --git a/.github/copilot-instructions.md b/.github/copilot-instructions.md
+index 5da1bca..ec33f6d 100644
+--- a/.github/copilot-instructions.md
++++ b/.github/copilot-instructions.md
+@@ -1,7 +1,7 @@
+ # GitHub Copilot Instructions
+ 
+ - Always include pt-BR translations for any new text added to the project.
+-- fazer.ai is always styled as-is, with a dot and lowercase letters. Never use Fazer.ai
++- indicafacil.app is always styled as-is, with a dot and lowercase letters. Never use Fazer.ai
+ - Always check if adding specs is necessary when modifying code.
+ - Evaluate if specs added are actually needed and not redundant. Specs should not be for documentation purposes only, they should cover expected behavior.
+ - Always evaluate if frontend changes are needed when modifying backend code, and vice versa.
+diff --git a/.github/workflows/docker-build.yml b/.github/workflows/docker-build.yml
+index 6933440..c06e32a 100644
+--- a/.github/workflows/docker-build.yml
++++ b/.github/workflows/docker-build.yml
+@@ -44,6 +44,7 @@ jobs:
+         uses: docker/build-push-action@v5
+         with:
+           context: .
++          file: docker/Dockerfile
+           push: true
+           platforms: linux/amd64,linux/arm64
+           tags: ${{ steps.meta.outputs.tags }}
+diff --git a/CUSTOM_BRANDING.md b/CUSTOM_BRANDING.md
+index 2359bf3..8275566 100644
+--- a/CUSTOM_BRANDING.md
++++ b/CUSTOM_BRANDING.md
+@@ -8,10 +8,10 @@ Export environment variables and run rake task with `bundle exec rails branding:
+ > Unset environment variables are reset to default values.
+ 
+ ```bash
+-INSTALLATION_NAME="Chatwoot fazer.ai" \
++INSTALLATION_NAME="Chatwoot indicafacil.app" \
+ BRAND_NAME="My Company" \
+-LOGO_THUMBNAIL="https://fazer.ai/logo-thumbnail.svg" \
+-LOGO="https://fazer.ai/logo.svg" \
++LOGO_THUMBNAIL="https://licencas.indicafacil.app/logo-thumbnail.svg" \
++LOGO="https://licencas.indicafacil.app/logo.svg" \
+ bundle exec rails branding:update
+ ```
+ 
+diff --git a/app/controllers/health_controller.rb b/app/controllers/health_controller.rb
+index 6f948cb..0a66748 100644
+--- a/app/controllers/health_controller.rb
++++ b/app/controllers/health_controller.rb
+@@ -2,6 +2,6 @@
+ # authentication, and callbacks. Used for health checks
+ class HealthController < ActionController::Base # rubocop:disable Rails/ApplicationController
+   def show
+-    render json: { status: 'woot', platform: 'fazer.ai', version: Chatwoot.config[:version] }
++    render json: { status: 'woot', platform: 'indicafacil.app', version: Chatwoot.config[:version] }
+   end
+ end
+diff --git a/app/javascript/dashboard/components-next/sidebar/SidebarProfileMenu.vue b/app/javascript/dashboard/components-next/sidebar/SidebarProfileMenu.vue
+index ffeac7b..08ea938 100644
+--- a/app/javascript/dashboard/components-next/sidebar/SidebarProfileMenu.vue
++++ b/app/javascript/dashboard/components-next/sidebar/SidebarProfileMenu.vue
+@@ -95,7 +95,7 @@ const menuItems = computed(() => {
+       showOnCustomBrandedInstance: false,
+       label: t('SIDEBAR_ITEMS.CHANGELOG'),
+       icon: 'i-lucide-scroll-text',
+-      link: 'https://fazer.ai/chatwoot-release-notes',
++      link: 'https://licencas.indicafacil.app/chatwoot-release-notes',
+       nativeLink: true,
+       target: '_blank',
+     },
+diff --git a/app/javascript/dashboard/components/app/UpdateBanner.vue b/app/javascript/dashboard/components/app/UpdateBanner.vue
+index 6955daf..b2597b6 100644
+--- a/app/javascript/dashboard/components/app/UpdateBanner.vue
++++ b/app/javascript/dashboard/components/app/UpdateBanner.vue
+@@ -73,7 +73,7 @@ export default {
+     v-if="shouldShowBanner"
+     color-scheme="primary"
+     :banner-message="bannerMessage"
+-    href-link="https://fazer.ai/chatwoot-release-notes"
++    href-link="https://licencas.indicafacil.app/chatwoot-release-notes"
+     :href-link-text="$t('GENERAL_SETTINGS.LEARN_MORE')"
+     has-close-button
+     @close="dismissUpdateBanner"
+diff --git a/app/javascript/dashboard/constants/globals.js b/app/javascript/dashboard/constants/globals.js
+index 4f3ba19..6f175c6 100644
+--- a/app/javascript/dashboard/constants/globals.js
++++ b/app/javascript/dashboard/constants/globals.js
+@@ -45,7 +45,7 @@ export default {
+     'https://testimonials.cdn.chatwoot.com/testimonial-content.json',
+   WHATSAPP_EMBEDDED_SIGNUP_DOCS_URL:
+     'https://developers.facebook.com/docs/whatsapp/embedded-signup/custom-flows/onboarding-business-app-users#limitations',
+-  INDICA_FACIL_GUIDES_URL: 'https://app.fazer.ai/#/guides',
++  INDICA_FACIL_GUIDES_URL: 'https://app.indicafacil.app/#/guides',
+   SMALL_SCREEN_BREAKPOINT: 768,
+   LARGE_SCREEN_BREAKPOINT: 1024,
+   AVAILABILITY_STATUS_KEYS: ['online', 'busy', 'offline'],
+diff --git a/app/javascript/dashboard/i18n/locale/en/kanban.json b/app/javascript/dashboard/i18n/locale/en/kanban.json
+index 350cff7..af73ae5 100644
+--- a/app/javascript/dashboard/i18n/locale/en/kanban.json
++++ b/app/javascript/dashboard/i18n/locale/en/kanban.json
+@@ -2,8 +2,8 @@
+   "KANBAN": {
+     "PAYWALL": {
+       "TITLE": "Upgrade to use Kanban",
+-      "DESCRIPTION": "The Kanban feature requires a fazer.ai Chatwoot Pro subscription.",
+-      "UPGRADE_PROMPT": "Subscribe to fazer.ai Chatwoot Pro to access Kanban funnels, task management, and workflow automation.",
++      "DESCRIPTION": "The Kanban feature requires a indicafacil.app Chatwoot Pro subscription.",
++      "UPGRADE_PROMPT": "Subscribe to indicafacil.app Chatwoot Pro to access Kanban funnels, task management, and workflow automation.",
+       "NON_ADMIN_MESSAGE": "The Kanban feature is not available on your current plan. Please reach out to your administrator to upgrade.",
+       "UPGRADE_NOW": "Upgrade now"
+     }
+diff --git a/app/javascript/dashboard/i18n/locale/pt_BR/kanban.json b/app/javascript/dashboard/i18n/locale/pt_BR/kanban.json
+index 322bb03..f96fe8b 100644
+--- a/app/javascript/dashboard/i18n/locale/pt_BR/kanban.json
++++ b/app/javascript/dashboard/i18n/locale/pt_BR/kanban.json
+@@ -2,8 +2,8 @@
+   "KANBAN": {
+     "PAYWALL": {
+       "TITLE": "Faça upgrade para usar o Kanban",
+-      "DESCRIPTION": "O recurso Kanban requer uma assinatura Chatwoot Pro fazer.ai.",
+-      "UPGRADE_PROMPT": "Assine o Chatwoot Pro fazer.ai para acessar funis Kanban, gerenciamento de tarefas e automação de fluxo de trabalho.",
++      "DESCRIPTION": "O recurso Kanban requer uma assinatura Chatwoot Pro indicafacil.app.",
++      "UPGRADE_PROMPT": "Assine o Chatwoot Pro indicafacil.app para acessar funis Kanban, gerenciamento de tarefas e automação de fluxo de trabalho.",
+       "NON_ADMIN_MESSAGE": "O recurso Kanban não está disponível no seu plano atual. Entre em contato com o administrador para fazer o upgrade.",
+       "UPGRADE_NOW": "Fazer upgrade"
+     }
+diff --git a/app/javascript/dashboard/routes/dashboard/internalChat/ProFeatureNudge.vue b/app/javascript/dashboard/routes/dashboard/internalChat/ProFeatureNudge.vue
+index 79090cd..6765df9 100644
+--- a/app/javascript/dashboard/routes/dashboard/internalChat/ProFeatureNudge.vue
++++ b/app/javascript/dashboard/routes/dashboard/internalChat/ProFeatureNudge.vue
+@@ -22,7 +22,7 @@ const { t } = useI18n();
+ const { isSuperAdmin, isAdmin } = useInternalChatPro();
+ 
+ const dialogRef = ref(null);
+-const upgradeUrl = 'https://fazer.ai/kanban';
++const upgradeUrl = 'https://licencas.indicafacil.app/kanban';
+ 
+ const descriptionKey = computed(() => {
+   const map = {
+diff --git a/app/javascript/dashboard/routes/dashboard/kanban/Index.vue b/app/javascript/dashboard/routes/dashboard/kanban/Index.vue
+index 8f3b553..dc386a9 100644
+--- a/app/javascript/dashboard/routes/dashboard/kanban/Index.vue
++++ b/app/javascript/dashboard/routes/dashboard/kanban/Index.vue
+@@ -14,7 +14,7 @@ const isSuperAdmin = computed(() => {
+   return currentUser.value.type === 'SuperAdmin';
+ });
+ 
+-const upgradeUrl = 'https://fazer.ai/kanban';
++const upgradeUrl = 'https://licencas.indicafacil.app/kanban';
+ </script>
+ 
+ <template>
+diff --git a/app/javascript/dashboard/routes/dashboard/settings/account/components/BuildInfo.vue b/app/javascript/dashboard/routes/dashboard/settings/account/components/BuildInfo.vue
+index ab1905e..adba1c3 100644
+--- a/app/javascript/dashboard/routes/dashboard/settings/account/components/BuildInfo.vue
++++ b/app/javascript/dashboard/routes/dashboard/settings/account/components/BuildInfo.vue
+@@ -54,12 +54,12 @@ const copyGitSha = () => {
+       <!-- eslint-disable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->
+       <a
+         v-if="globalConfig.displayManifest"
+-        href="https://fazer.ai"
++        href="https://licencas.indicafacil.app"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="px-2 text-n-slate-11 hover:text-n-brand"
+       >
+-        fazer.ai
++        indicafacil.app
+       </a>
+       <!-- eslint-enable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->
+     </div>
+diff --git a/app/javascript/v3/views/login/Index.vue b/app/javascript/v3/views/login/Index.vue
+index 425598b..d1a18ba 100644
+--- a/app/javascript/v3/views/login/Index.vue
++++ b/app/javascript/v3/views/login/Index.vue
+@@ -424,12 +424,12 @@ export default {
+     >
+       powered by
+       <a
+-        href="https://fazer.ai"
++        href="https://licencas.indicafacil.app"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="text-n-slate-11 hover:text-n-brand"
+       >
+-        fazer.ai
++        indicafacil.app
+       </a>
+     </p>
+     <!-- eslint-enable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->
+diff --git a/app/services/whatsapp/providers/whatsapp_baileys_service.rb b/app/services/whatsapp/providers/whatsapp_baileys_service.rb
+index 08985fb..cd74841 100644
+--- a/app/services/whatsapp/providers/whatsapp_baileys_service.rb
++++ b/app/services/whatsapp/providers/whatsapp_baileys_service.rb
+@@ -654,7 +654,7 @@ class Whatsapp::Providers::WhatsappBaileysService < Whatsapp::Providers::BaseSer
+     content.compact
+   end
+ 
+-  # `is_recorded_audio` is the legacy fazer.ai meta key (transcode pipeline and old messages).
++  # `is_recorded_audio` is the legacy indicafacil.app meta key (transcode pipeline and old messages).
+   def voice_note_attachment?(attachment)
+     meta = attachment.meta || {}
+     meta['is_voice_message'].present? || meta['is_recorded_audio'].present?
+diff --git a/app/services/whatsapp/providers/whatsapp_cloud_service.rb b/app/services/whatsapp/providers/whatsapp_cloud_service.rb
+index 80369b4..fd6fa2a 100644
+--- a/app/services/whatsapp/providers/whatsapp_cloud_service.rb
++++ b/app/services/whatsapp/providers/whatsapp_cloud_service.rb
+@@ -181,7 +181,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
+   def voice_message?(type, attachment)
+     return false unless type == 'audio' && attachment.file.content_type == 'audio/ogg'
+ 
+-    # `is_recorded_audio` is the legacy fazer.ai meta key (transcode pipeline and old messages).
++    # `is_recorded_audio` is the legacy indicafacil.app meta key (transcode pipeline and old messages).
+     (attachment.meta&.dig('is_voice_message') || attachment.meta&.dig('is_recorded_audio')).present?
+   end
+ 
+diff --git a/app/views/layouts/vueapp.html.erb b/app/views/layouts/vueapp.html.erb
+index 98bc634..4848ed0 100644
+--- a/app/views/layouts/vueapp.html.erb
++++ b/app/views/layouts/vueapp.html.erb
+@@ -5,7 +5,7 @@
+       <%= @global_config['INSTALLATION_NAME'] %>
+     </title>
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=0"/>
+-    <meta name="generator" content="fazer.ai"/>
++    <meta name="generator" content="indicafacil.app"/>
+     <meta name="theme-color" content="<%= @global_config['BRAND_COLOR'] %>">
+     <meta name="apple-mobile-web-app-title" content="<%= @global_config['INSTALLATION_NAME'] %>">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+diff --git a/app/views/super_admin/devise/sessions/new.html.erb b/app/views/super_admin/devise/sessions/new.html.erb
+index a8d8000..94ff4c5 100644
+--- a/app/views/super_admin/devise/sessions/new.html.erb
++++ b/app/views/super_admin/devise/sessions/new.html.erb
+@@ -1,7 +1,7 @@
+ <!DOCTYPE html>
+ <html>
+   <head>
+-    <title>SuperAdmin | fazer.ai</title>
++    <title>SuperAdmin | indicafacil.app</title>
+     <%= vite_client_tag %>
+     <%= vite_javascript_tag 'superadmin' %>
+   </head>
+diff --git a/lib/middleware/fazer_ai_platform_header.rb b/lib/middleware/fazer_ai_platform_header.rb
+index 3aa1d15..7b301c8 100644
+--- a/lib/middleware/fazer_ai_platform_header.rb
++++ b/lib/middleware/fazer_ai_platform_header.rb
+@@ -8,7 +8,7 @@ module Middleware # rubocop:disable Style/ClassAndModuleChildren
+ 
+     def call(env)
+       status, headers, response = @app.call(env)
+-      headers['X-Platform'] = 'fazer.ai'
++      headers['X-Platform'] = 'indicafacil.app'
+       [status, headers, response]
+     end
+   end
+diff --git a/spec/controllers/health_controller_spec.rb b/spec/controllers/health_controller_spec.rb
+index 22b28d4..10b60cf 100644
+--- a/spec/controllers/health_controller_spec.rb
++++ b/spec/controllers/health_controller_spec.rb
+@@ -8,15 +8,15 @@ RSpec.describe 'Health Check', type: :request do
+       expect(response.parsed_body['status']).to eq('woot')
+     end
+ 
+-    it 'returns fazer.ai platform info' do
++    it 'returns indicafacil.app platform info' do
+       get '/health'
+-      expect(response.parsed_body['platform']).to eq('fazer.ai')
++      expect(response.parsed_body['platform']).to eq('indicafacil.app')
+       expect(response.parsed_body['version']).to eq(Chatwoot.config[:version])
+     end
+ 
+     it 'includes X-Platform header' do
+       get '/health'
+-      expect(response.headers['X-Platform']).to eq('fazer.ai')
++      expect(response.headers['X-Platform']).to eq('indicafacil.app')
+     end
+   end
+ end
