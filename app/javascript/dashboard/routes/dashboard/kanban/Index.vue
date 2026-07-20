@@ -14,7 +14,7 @@ const isSuperAdmin = computed(() => {
   return currentUser.value.type === 'SuperAdmin';
 });
 
-const upgradeUrl = 'https://indicafacil.app/kanban';
+const upgradeUrl = 'https://licencas.indicafacil.app/kanban';
 </script>
 
 <template>
