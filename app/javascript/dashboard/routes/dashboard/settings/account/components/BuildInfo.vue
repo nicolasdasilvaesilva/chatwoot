@@ -43,7 +43,7 @@ const copyGitSha = () => {
       }}
     </div>
     <div class="divide-x divide-n-slate-9">
-      <span class="px-2">{{ `v${globalConfig.appVersion}-indica-facil.02` }}</span>
+      <span class="px-2">{{ globalConfig.appVersion }}</span>
       <span
         v-tooltip="t('COMPONENTS.CODE.BUTTON_TEXT')"
         class="px-2 build-id cursor-pointer"
