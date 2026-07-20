@@ -43,7 +43,7 @@ const copyGitSha = () => {
       }}
     </div>
     <div class="divide-x divide-n-slate-9">
-      <span class="px-2">{{ `v${globalConfig.appVersion}-indica-facil.01` }}</span>
+      <span class="px-2">{{ `v${globalConfig.appVersion}` }}</span>
       <span
         v-tooltip="t('COMPONENTS.CODE.BUTTON_TEXT')"
         class="px-2 build-id cursor-pointer"
@@ -54,12 +54,12 @@ const copyGitSha = () => {
       <!-- eslint-disable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->
       <a
         v-if="globalConfig.displayManifest"
-        href="https://licencas.indicafacil.app"
+        href="https://indicafacil.app"
         target="_blank"
         rel="noopener noreferrer"
         class="px-2 text-n-slate-11 hover:text-n-brand"
       >
-        Indica Fácil Tecnologia e Serviços Digitais
+        indicafacil.app
       </a>
       <!-- eslint-enable vue/no-bare-strings-in-template @intlify/vue-i18n/no-raw-text -->
     </div>

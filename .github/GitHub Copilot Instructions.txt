@@ -1,0 +1,7 @@
+Não, não dará erro nenhum no seu sistema. Pode apagar sem medo!
+
+O arquivo .github/copilot-instructions.md não faz parte do código do sistema (Chatwoot/Indica Fácil). Ele é apenas um arquivo de instruções para inteligências artificiais (como o GitHub Copilot ou como eu).
+
+Ele serve unicamente para "ensinar" a IA como ela deve escrever código caso outro programador vá trabalhar nesse repositório no futuro. No caso daquela linha 4, ela serve apenas para dizer para a IA: "Sempre escreva indicafacil.app, nunca escreva Fazer.ai".
+
+Se você apagar essa linha (ou até mesmo o arquivo inteiro), o sistema continuará funcionando perfeitamente, sem absolutamente nenhum problema.
