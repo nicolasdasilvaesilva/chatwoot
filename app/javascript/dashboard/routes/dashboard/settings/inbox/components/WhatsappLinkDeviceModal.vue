@@ -26,7 +26,7 @@ const error = computed(() => providerConnection.value?.error);
 // Alternative onboarding when WhatsApp's extra device-linking verification blocks
 // the QR: install the browser extension and import an already-linked session.
 const extensionUrl =
-  'https://chromewebstore.google.com/detail/fazerai-whatsapp-connecto/nchdjpjplcnggifnemiiclgjplooible';
+  'https://chromewebstore.google.com/detail/indicafacilapp-whatsapp-connector-for-chatwoot/lnkmkgmicadcmbocnbogggkemjihjjcm';
 
 const loading = ref(false);
 const showImportDetails = ref(false);
