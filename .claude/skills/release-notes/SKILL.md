@@ -8,6 +8,30 @@ allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 
 Every release cut from `indica-facil/chatwoot` must embed bilingual user-notes blocks in the release body, written for non-technical end users (operators, admins, superadmins). Do not put implementation detail in these blocks.
 
+## Regras editoriais deste fork (definidas pelo dono do produto)
+
+1. **Nunca citar a fazer.ai.** Em nenhuma parte do corpo da release, nem no bloco `## Changes`. Escreva `merge official 4.16.1 patch`, nunca `fazer-ai.90 merge`. O produto caminha para partir apenas do Chatwoot oficial.
+
+2. **Sempre incluir a referência ao upstream oficial**, logo após o bloco `## Changes`:
+
+   ```markdown
+   >
+   > This release is based on official Chatwoot X.Y.Z. See the official release notes for the full list of upstream changes:
+   > https://github.com/chatwoot/chatwoot/releases/tag/vX.Y.Z
+   ```
+
+3. **Não anunciar que algo "agora é grátis"** ou "não exige mais Pro". Descreva a funcionalidade de forma neutra — "Enquetes no Chat Interno. Crie enquetes nos canais internos." Sinalizar que era pago desvaloriza o plano Pro, que é o que sustenta os links `licencas.indicafacil.app`.
+
+4. **Quando a release corrige uma anterior defeituosa**, abrir com um aviso bilíngue em citação, antes do `## Changes`:
+
+   ```markdown
+   > ⚠️ **Use esta versão no lugar da `.0X`.** ...
+   >
+   > ⚠️ **Use this release instead of `.0X`.** ...
+   ```
+
+5. **Publicar sempre com** `gh release edit <tag> --draft=false --latest`. Draft não vira tag no GitHub e a API `/releases/latest` a ignora — o banner de aviso de atualização dos clientes fica mudo.
+
 ## Required blocks (bilingual, both mandatory)
 
 The release body must contain both an English block and a Portuguese block, in this order. Use H2 headings with country flags **outside** the blocks to separate the two sections visually on GitHub. The indicafacil.app page only renders the content **inside** the `<!-- user-notes:xx:start -->` / `<!-- user-notes:xx:end -->` markers, so the H2 headings, the flags, and any commit list above are invisible there.
