@@ -108,6 +108,38 @@ Classificar cada item como:
 - **AVALIAR** — potencialmente compatível, precisa análise mais profunda
 - **IGNORAR** — conflita com nossas customizações ou é irrelevante
 
+### Etapa 2.5 — Diagnóstico de 3 conjuntos (OBRIGATÓRIO — incidente real)
+
+> **Esta etapa existe por causa de um incidente em 2026-07-25.** O patch 4.16.1 foi aplicado copiando arquivos direto do oficial, tratando como "customizado" apenas o que tinha marca. Isso sobrescreveu **39 arquivos** e removeu silenciosamente **Baileys, Z-API, Chat Interno e Kanban** da interface. O build Docker passou **verde**. Nenhum lint acusou. O defeito só apareceu quando o usuário abriu a tela de criar caixa de entrada e viu 2 provedores em vez de 4 — depois da release já publicada.
+
+**O fork não difere do oficial apenas em marca.** Ele carrega features inteiras que tocam arquivos compartilhados com o upstream:
+
+| Arquivo compartilhado | Feature do fork que vive nele |
+|---|---|
+| `config/routes.rb` | rotas do Internal Chat, Scheduled Messages |
+| `app/javascript/dashboard/store/index.js` | módulos Vuex do Internal Chat |
+| `app/javascript/dashboard/routes/dashboard/dashboard.routes.js` | rotas do Kanban e Chat Interno |
+| `app/javascript/dashboard/featureFlags.js` | flags do fork |
+| `.../settings/inbox/channels/Whatsapp.vue` | provedores Baileys e Z-API |
+| `app/controllers/webhooks/whatsapp_controller.rb` | webhooks Baileys/Z-API |
+| `app/services/whatsapp/incoming_message_base_service.rb` | locking de duas camadas, reações |
+
+Antes de copiar **qualquer** arquivo, rode o diagnóstico:
+
+```
+A = arquivos que o patch altera   (oficial_novo  != oficial_base)
+B = arquivos que o fork customiza (fork_base     != oficial_base)
+A ∩ B = EXIGEM MERGE MANUAL — nunca copiar
+```
+
+Para cada arquivo em `A ∩ B`, use merge de 3 vias e depois o white-label:
+
+```bash
+git merge-file -p <fork_base> <oficial_base> <oficial_novo> > resultado
+```
+
+Conflito no merge significa que **ambos mexeram na mesma linha** — resolva a favor do fork (Regra de Ouro) e só incorpore o upstream quando comprovadamente compatível. Atenção: escolher "o lado do fork" pode quebrar o arquivo se o upstream tiver renomeado/movido símbolos que o fork ainda usa — rode o lint depois, sempre.
+
 ### Etapa 3 — Merge Inteligente (arquivo por arquivo)
 
 Para cada arquivo diferente entre os dois repositórios:
@@ -219,6 +251,23 @@ grep -ic kanban db/schema.rb  # DEVE ser 0
 # 9. Frontend (se alterado)
 NODE_OPTIONS="--max-old-space-size=4096" npx vitest run --no-coverage --reporter=verbose
 ```
+
+### Etapa 7.5 — Validar por FEATURE, não por arquivo (OBRIGATÓRIO)
+
+Build verde e lint limpo **não provam** que as features do fork sobreviveram. Conte referências reais:
+
+```bash
+echo "routes internal_chat:      $(grep -c 'internal_chat' config/routes.rb)"                       # esperado >= 1
+echo "dashboard.routes kanban:   $(grep -c 'kanban\|internalChat' app/javascript/dashboard/routes/dashboard/dashboard.routes.js)"  # >= 4
+echo "vuex internalChat:         $(grep -c 'internalChat' app/javascript/dashboard/store/index.js)"  # >= 4
+echo "Whatsapp.vue baileys/zapi: $(grep -ic 'baileys\|zapi' app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue)"  # >= 20
+echo "webhook baileys/zapi:      $(grep -ic 'baileys\|zapi' app/controllers/webhooks/whatsapp_controller.rb)"  # >= 2
+echo "internal_chat models:      $(ls app/models/internal_chat/ | wc -l)"        # 12
+echo "baileys handlers:          $(ls app/services/whatsapp/baileys_handlers/ | wc -l)"  # 11
+echo "zapi handlers:             $(ls app/services/whatsapp/zapi_handlers/ | wc -l)"     # 6
+```
+
+Qualquer zero aqui é **bloqueante**. Confirme também na UI antes de publicar: a tela `settings/inboxes/new/whatsapp` deve listar **4 provedores** (Cloud, Twilio, Baileys, Z-API), e o menu lateral deve mostrar **Chat Interno** e **Kanban**.
 
 ### Etapa 8 — White-label check pós-merge
 
