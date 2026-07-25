@@ -49,10 +49,14 @@ class Api::V1::Accounts::Whatsapp::AuthorizationsController < Api::V1::Accounts:
     }, status: :unprocessable_entity
   end
 
+  # Accept any WhatsApp inbox here so the embedded signup flow can drive both
+  # reauth/upgrade of an existing whatsapp_cloud inbox AND provider conversion
+  # from a non-cloud WhatsApp inbox (baileys, zapi, 360dialog) to cloud.
   def can_reconfigure_channel?
     channel = @inbox.channel
-    return false unless channel.provider == 'whatsapp_cloud'
-    return true if ChatwootApp.chatwoot_cloud?
+    return false unless channel.is_a?(Channel::Whatsapp)
+
+    # Reconfiguring a live embedded-signup channel requires the feature flag.
     return Current.account.feature_enabled?('whatsapp_reconfigure') if channel.provider_config['source'] == 'embedded_signup'
 
     true

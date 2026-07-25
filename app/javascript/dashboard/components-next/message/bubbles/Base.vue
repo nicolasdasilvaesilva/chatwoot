@@ -3,6 +3,7 @@ import { computed } from 'vue';
 
 import MessageMeta from '../MessageMeta.vue';
 import CaptainGenerationDetails from '../CaptainGenerationDetails.vue';
+import ReferralCard from './ReferralCard.vue';
 
 import { emitter } from 'shared/helpers/mitt';
 import { useMessageContext } from '../provider.js';
@@ -21,6 +22,8 @@ const {
   orientation,
   inReplyTo,
   shouldGroupWithNext,
+  additionalAttributes,
+  contentAttributes,
   id,
   sender,
   senderType,
@@ -40,6 +43,15 @@ const metaColorClass = computed(() =>
 
 const emailMetaClass = computed(() =>
   variant.value === MESSAGE_VARIANTS.EMAIL ? 'px-3 pb-3' : ''
+);
+
+// Click-to-WhatsApp ad metadata attached to the first message after an ad click.
+const referral = computed(() => contentAttributes.value?.referral);
+
+// The contact deleted/revoked this message on WhatsApp. We keep the content
+// readable but mute the bubble and add a dashed border to signal the deletion.
+const deletedByContact = computed(
+  () => contentAttributes.value?.deletedByContact === true
 );
 
 const varaintBaseMap = {
@@ -74,6 +86,16 @@ const flexOrientationClass = computed(() => {
   return map[orientation.value];
 });
 
+const isScheduledMessage = computed(
+  () => !!additionalAttributes.value?.scheduledMessageId
+);
+
+const scheduledMessageClass = computed(() => {
+  if (!isScheduledMessage.value) return '';
+  if (variant.value === MESSAGE_VARIANTS.AGENT) return 'bg-n-solid-iris';
+  return '';
+});
+
 const messageClass = computed(() => {
   const classToApply = [varaintBaseMap[variant.value]];
 
@@ -81,6 +103,14 @@ const messageClass = computed(() => {
     classToApply.push(orientationMap[orientation.value]);
   } else {
     classToApply.push('rounded-lg');
+  }
+
+  if (scheduledMessageClass.value) {
+    classToApply.push(scheduledMessageClass.value);
+  }
+
+  if (deletedByContact.value) {
+    classToApply.push('border-2 border-dashed border-n-slate-7 opacity-75');
   }
 
   return classToApply;
@@ -126,6 +156,7 @@ const replyToPreview = computed(() => {
       },
     ]"
   >
+    <ReferralCard v-if="referral" :referral="referral" />
     <div
       v-if="inReplyTo"
       class="p-2 -mx-1 mb-2 rounded-lg cursor-pointer bg-n-alpha-black1"

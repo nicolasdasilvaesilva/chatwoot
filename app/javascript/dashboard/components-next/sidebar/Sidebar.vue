@@ -212,6 +212,7 @@ useEventListener(document, 'touchend', onResizeEnd);
 
 const inboxes = useMapGetter('inboxes/getInboxes');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
+const dashboardApps = useMapGetter('dashboardApps/getAppsOnSidebar');
 const allUnreadCount = useMapGetter(
   'conversationUnreadCounts/getAllUnreadCount'
 );
@@ -253,6 +254,7 @@ onMounted(() => {
   store.dispatch('attributes/get');
   store.dispatch('customViews/get', 'conversation');
   store.dispatch('customViews/get', 'contact');
+  store.dispatch('dashboardApps/get');
 });
 
 watch([accountId, hasConversationUnreadCounts], fetchConversationUnreadCounts, {
@@ -360,7 +362,7 @@ const newReportRoutes = () => [
 const reportRoutes = computed(() => newReportRoutes());
 
 const menuItems = computed(() => {
-  return [
+  const items = [
     {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
@@ -491,6 +493,30 @@ const menuItems = computed(() => {
           })),
         },
       ],
+    },
+    {
+      name: 'InternalChat',
+      label: t('SIDEBAR.INTERNAL_CHAT'),
+      icon: 'i-lucide-messages-square',
+      to: accountScopedRoute('internal_chat_home'),
+      activeOn: [
+        'internal_chat',
+        'internal_chat_home',
+        'internal_chat_channel',
+        'internal_chat_dm',
+        'internal_chat_thread',
+        'internal_chat_drafts',
+      ],
+      getterKeys: {
+        count: 'internalChat/getUnreadCount',
+      },
+    },
+    {
+      name: 'Kanban',
+      label: t('SIDEBAR.KANBAN'),
+      icon: 'i-lucide-columns-3',
+      to: accountScopedRoute('kanban_view'),
+      activeOn: ['kanban_view'],
     },
     {
       name: 'Captain',
@@ -931,6 +957,23 @@ const menuItems = computed(() => {
       ],
     },
   ];
+
+  if (dashboardApps.value.length > 0) {
+    const settingsIndex = items.findIndex(item => item.name === 'Settings');
+    items.splice(settingsIndex, 0, {
+      name: 'Apps',
+      label: t('SIDEBAR.APPS'),
+      icon: 'i-lucide-layout-grid',
+      children: dashboardApps.value.map(app => ({
+        name: `app-${app.id}`,
+        label: app.title,
+        to: accountScopedRoute('dashboard_app_view', { appId: app.id }),
+        activeOn: ['dashboard_app_view'],
+      })),
+    });
+  }
+
+  return items;
 });
 </script>
 

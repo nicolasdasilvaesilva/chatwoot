@@ -314,6 +314,7 @@ class Whatsapp::IncomingMessageBaseService # rubocop:disable Metrics/ClassLength
     # Scope reuse to the contact across all its contact_inboxes in this inbox: WhatsApp coexistence
     # gives one contact multiple source_ids (phone + BSUID), so reopen must not be limited to a single contact_inbox.
     conversations = @contact.conversations.where(inbox_id: @inbox.id)
+    # if lock to single conversation is disabled, we will create a new conversation if previous conversation is resolved
     if @inbox.lock_to_single_conversation
       conversations.last
     else

@@ -4,6 +4,9 @@ import { useElementSize } from '@vueuse/core';
 // composable
 import { useLabelSuggestions } from 'dashboard/composables/useLabelSuggestions';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
+import { useAdmin } from 'dashboard/composables/useAdmin';
+import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
+import { useAlert, usePendingAlert } from 'dashboard/composables';
 
 // components
 import ReplyBox from './ReplyBox.vue';
@@ -36,6 +39,15 @@ import { REPLY_POLICY } from 'shared/constants/links';
 import wootConstants from 'dashboard/constants/globals';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
+import WhatsappLinkDeviceModal from '../../../routes/dashboard/settings/inbox/components/WhatsappLinkDeviceModal.vue';
+import { isInboxAdminInGroup } from 'dashboard/helper/phoneHelper';
+import {
+  isReachoutRestricted,
+  reachoutRestrictionDeadline,
+  isMessageCapped,
+  isMessageCapReached,
+  messageCapQuota,
+} from 'dashboard/helper/whatsapp';
 
 export default {
   components: {
@@ -45,15 +57,28 @@ export default {
     ConversationLabelSuggestion,
     Spinner,
     ResizableEditorWrapper,
+    WhatsappLinkDeviceModal,
   },
   mixins: [inboxMixin],
   setup() {
+    const { isAdmin } = useAdmin();
+    const isPopOutReplyBox = ref(false);
     const conversationPanelRef = ref(null);
     const resizableEditorWrapperRef = ref(null);
     const messagesViewRef = useTemplateRef('messagesViewRef');
     const topBannerRef = useTemplateRef('topBannerRef');
     const { height: containerHeight } = useElementSize(messagesViewRef);
     const { height: topBannerHeight } = useElementSize(topBannerRef);
+
+    const keyboardEvents = {
+      Escape: {
+        action: () => {
+          isPopOutReplyBox.value = false;
+        },
+      },
+    };
+
+    useKeyboardEvents(keyboardEvents);
 
     const {
       captainTasksEnabled,
@@ -73,6 +98,8 @@ export default {
       topBannerRef,
       containerHeight,
       topBannerHeight,
+      isAdmin,
+      isPopOutReplyBox,
     };
   },
   data() {
@@ -84,6 +111,7 @@ export default {
       isProgrammaticScroll: false,
       messageSentSinceOpened: false,
       labelSuggestions: [],
+      showLinkDeviceModal: false,
     };
   },
 
@@ -91,9 +119,14 @@ export default {
     ...mapGetters({
       currentChat: 'getSelectedChat',
       currentUserId: 'getCurrentUserID',
+      currentUser: 'getCurrentUser',
       listLoadingStatus: 'getAllMessagesLoaded',
       currentAccountId: 'getCurrentAccountId',
+      globalConfig: 'globalConfig/get',
     }),
+    currentInbox() {
+      return this.$store.getters['inboxes/getInbox'](this.currentChat.inbox_id);
+    },
     isOpen() {
       return this.currentChat?.status === wootConstants.STATUS_TYPE.OPEN;
     },
@@ -243,6 +276,132 @@ export default {
 
       return { incoming, outgoing };
     },
+    inboxSupportsEdit() {
+      // Currently only Baileys WhatsApp channel supports message editing
+      return this.isAWhatsAppBaileysChannel;
+    },
+    inboxSupportsReactions() {
+      return (
+        this.isAWhatsAppCloudChannel ||
+        this.isAWhatsAppBaileysChannel ||
+        this.isAWhatsAppZapiChannel
+      );
+    },
+    currentContact() {
+      const senderId = this.currentChat?.meta?.sender?.id;
+      if (!senderId) return {};
+      return this.$store.getters['contacts/getContact'](senderId);
+    },
+    isGroupConversation() {
+      return this.currentChat?.group_type === 'group';
+    },
+    groupContactId() {
+      return this.currentChat?.meta?.sender?.id || null;
+    },
+    groupMembers() {
+      if (!this.groupContactId) return [];
+      return (
+        this.$store.getters['groupMembers/getGroupMembers'](
+          this.groupContactId
+        ) || []
+      );
+    },
+    groupMembersMeta() {
+      if (!this.groupContactId) return {};
+      return (
+        this.$store.getters['groupMembers/getGroupMembersMeta'](
+          this.groupContactId
+        ) || {}
+      );
+    },
+    isInboxAdminInCurrentGroup() {
+      const meta = this.groupMembersMeta;
+      if (meta.is_inbox_admin != null) return meta.is_inbox_admin;
+      const inboxPhone = meta.inbox_phone_number || this.inbox?.phone_number;
+      return isInboxAdminInGroup(inboxPhone, this.groupMembers);
+    },
+    isGroupMembersLoaded() {
+      const meta = this.groupMembersMeta;
+      return meta.is_inbox_admin != null || this.groupMembers.length > 0;
+    },
+    isAnnouncementModeRestricted() {
+      return (
+        this.isAWhatsAppBaileysChannel &&
+        this.isGroupConversation &&
+        this.currentContact?.additional_attributes?.announce === true &&
+        this.isGroupMembersLoaded &&
+        !this.isInboxAdminInCurrentGroup
+      );
+    },
+    isGroupLeft() {
+      return (
+        this.isAWhatsAppBaileysChannel &&
+        this.isGroupConversation &&
+        this.currentContact?.additional_attributes?.group_left === true
+      );
+    },
+    isGroupsDisabled() {
+      return (
+        this.isAWhatsAppBaileysChannel &&
+        this.isGroupConversation &&
+        !this.globalConfig.baileysWhatsappGroupsEnabled
+      );
+    },
+    isSuperAdmin() {
+      return this.currentUser.type === 'SuperAdmin';
+    },
+    inboxProviderConnection() {
+      return this.currentInbox.provider_connection?.connection;
+    },
+    inboxReachoutLock() {
+      return this.currentInbox.provider_connection?.reachout_time_lock;
+    },
+    showReachoutRestriction() {
+      return isReachoutRestricted(
+        this.inboxReachoutLock,
+        this.inboxProviderConnection
+      );
+    },
+    reachoutRestrictionMessage() {
+      const deadline = reachoutRestrictionDeadline(this.inboxReachoutLock);
+      return deadline
+        ? this.$t(
+            'CONVERSATION.INBOX.WHATSAPP_REACHOUT_RESTRICTION.RESTRICTED_UNTIL',
+            { time: deadline }
+          )
+        : this.$t(
+            'CONVERSATION.INBOX.WHATSAPP_REACHOUT_RESTRICTION.RESTRICTED'
+          );
+    },
+    inboxNewChatCap() {
+      return this.currentInbox.provider_connection?.new_chat_cap;
+    },
+    showMessageCap() {
+      return isMessageCapped(
+        this.inboxNewChatCap,
+        this.inboxProviderConnection
+      );
+    },
+    messageCapBannerScheme() {
+      return isMessageCapReached(this.inboxNewChatCap) ? 'alert' : 'warning';
+    },
+    messageCapMessage() {
+      const quota = messageCapQuota(this.inboxNewChatCap);
+      if (isMessageCapReached(this.inboxNewChatCap)) {
+        return quota
+          ? this.$t(
+              'CONVERSATION.INBOX.WHATSAPP_NEW_CHAT_CAP.CAPPED_WITH_QUOTA',
+              quota
+            )
+          : this.$t('CONVERSATION.INBOX.WHATSAPP_NEW_CHAT_CAP.CAPPED');
+      }
+      return quota
+        ? this.$t(
+            'CONVERSATION.INBOX.WHATSAPP_NEW_CHAT_CAP.WARNING_WITH_QUOTA',
+            quota
+          )
+        : this.$t('CONVERSATION.INBOX.WHATSAPP_NEW_CHAT_CAP.WARNING');
+    },
   },
 
   watch: {
@@ -254,6 +413,21 @@ export default {
       this.fetchSuggestions();
       this.messageSentSinceOpened = false;
       this.resetReplyEditorHeight();
+    },
+    groupContactId: {
+      immediate: true,
+      handler(contactId) {
+        if (
+          contactId &&
+          this.isAWhatsAppBaileysChannel &&
+          this.isGroupConversation &&
+          !this.isGroupMembersLoaded
+        ) {
+          this.$store.dispatch('groupMembers/fetch', {
+            contactId,
+          });
+        }
+      },
     },
   },
 
@@ -331,12 +505,41 @@ export default {
         if (messageElement) {
           this.isProgrammaticScroll = true;
           messageElement.scrollIntoView({ behavior: 'smooth' });
-          this.fetchPreviousMessages();
+          if (messageId) {
+            emitter.emit(BUS_EVENTS.HIGHLIGHT_MESSAGE, { messageId });
+          }
+        } else if (messageId) {
+          this.fetchAndScrollToMessage(messageId);
         } else {
           this.scrollToBottom();
         }
       });
       this.makeMessagesRead();
+    },
+    async fetchAndScrollToMessage(messageId) {
+      const dismissSearch = usePendingAlert(
+        this.$t('SCHEDULED_MESSAGES.ITEM.SEARCHING_MESSAGE')
+      );
+      try {
+        await this.$store.dispatch('fetchPreviousMessages', {
+          conversationId: this.currentChat.id,
+          after: messageId,
+        });
+        this.$nextTick(() => {
+          dismissSearch();
+          const messageElement = document.getElementById('message' + messageId);
+          if (messageElement) {
+            this.isProgrammaticScroll = true;
+            messageElement.scrollIntoView({ behavior: 'smooth' });
+            emitter.emit(BUS_EVENTS.HIGHLIGHT_MESSAGE, { messageId });
+          } else {
+            useAlert(this.$t('SCHEDULED_MESSAGES.ITEM.MESSAGE_NOT_FOUND'));
+          }
+        });
+      } catch {
+        dismissSearch();
+        useAlert(this.$t('SCHEDULED_MESSAGES.ITEM.MESSAGE_NOT_FOUND'));
+      }
     },
     addScrollListener() {
       this.conversationPanel = this.$el.querySelector('.conversation-panel');
@@ -437,11 +640,189 @@ export default {
       const payload = useSnakeCase(message);
       await this.$store.dispatch('sendMessageWithData', payload);
     },
+    async handleToggleReaction({ messageId, targetSourceId, emoji }) {
+      // Backend keeps a single Message row per (target, user) and toggles it
+      // in-place. The cable echo always carries the original create's echo_id,
+      // so creating a fresh optimistic per toggle leaves the new one orphaned
+      // in the store (the cable matches the real msg id, never the new echo).
+      // Those orphans show up as "reagiu <emoji>" in the chat list preview
+      // even after the user toggles off. Update the existing entry instead.
+      const existing = this.findCurrentUserReaction(messageId, targetSourceId);
+      if (existing) {
+        await this.applyToggleOnExisting(existing, messageId, emoji);
+      } else {
+        await this.applyToggleOnNew(messageId, emoji);
+      }
+    },
+    async applyToggleOnExisting(existing, messageId, emoji) {
+      const isActive =
+        existing.content && !existing.content_attributes?.deleted;
+      const isToggleOff =
+        isActive && (emoji === '' || existing.content === emoji);
+      const newAttrs = { ...(existing.content_attributes || {}) };
+      if (isToggleOff) newAttrs.deleted = true;
+      else delete newAttrs.deleted;
+
+      const previous = {
+        content: existing.content,
+        content_attributes: existing.content_attributes,
+      };
+      this.$store.dispatch('updateMessage', {
+        ...existing,
+        content: isToggleOff ? '' : emoji,
+        content_attributes: newAttrs,
+      });
+
+      try {
+        await this.$store.dispatch('toggleMessageReaction', {
+          conversationId: this.currentChat.id,
+          messageId,
+          emoji,
+          echoId: existing.echo_id,
+        });
+      } catch (error) {
+        this.$store.dispatch('updateMessage', { ...existing, ...previous });
+        useAlert(this.$t('CONVERSATION.REACTIONS.FAILED'));
+      }
+    },
+    async applyToggleOnNew(messageId, emoji) {
+      const optimistic = this.buildOptimisticReaction(messageId, emoji);
+      this.$store.dispatch('addMessage', optimistic);
+
+      try {
+        await this.$store.dispatch('toggleMessageReaction', {
+          conversationId: this.currentChat.id,
+          messageId,
+          emoji,
+          echoId: optimistic.echo_id,
+        });
+      } catch (error) {
+        this.$store.dispatch('updateMessage', {
+          ...optimistic,
+          content_attributes: {
+            ...optimistic.content_attributes,
+            deleted: true,
+          },
+        });
+        useAlert(this.$t('CONVERSATION.REACTIONS.FAILED'));
+      }
+    },
+    findCurrentUserReaction(messageId, targetSourceId = null) {
+      const messages = this.currentChat?.messages || [];
+      const matches = messages.filter(m => {
+        if (!m.content_attributes?.is_reaction) return false;
+        // Match both in_reply_to (set by Chatwoot-originated reactions) and
+        // in_reply_to_external_id (set by WhatsApp echoes). Without the
+        // external id check, a multi-device reaction sent from the connected
+        // phone would be invisible here, and the next toggle would stack a
+        // duplicate optimistic row instead of mutating the echoed one.
+        const matchesInReplyTo =
+          m.content_attributes?.in_reply_to === messageId;
+        const matchesExternalId =
+          targetSourceId &&
+          m.content_attributes?.in_reply_to_external_id === targetSourceId;
+        if (!matchesInReplyTo && !matchesExternalId) return false;
+        // REST jbuilder doesn't surface sender_type; only the nested
+        // sender.type. ActionCable push_event_data has the top-level field.
+        // Read both so REST-loaded agent reactions match instead of stacking
+        // a duplicate optimistic row.
+        const senderType = (
+          m.sender_type ||
+          m.sender?.type ||
+          ''
+        ).toLowerCase();
+        const senderId = m.sender?.id ?? m.sender_id;
+        // Reaction created via Chatwoot UI by the current user
+        if (senderType === 'user' && senderId === this.currentUserId) {
+          return true;
+        }
+        // Multi-device echo: agent reacted from the WhatsApp mobile app on
+        // the same number connected to this inbox, so it has no agent in
+        // Chatwoot. Treat it as ours so a click toggles/removes it instead
+        // of stacking a duplicate reaction on top.
+        return m.message_type === 1 && senderId == null;
+      });
+      // Prefer active rows so we never resurrect a stale deleted echo when
+      // there is a fresher live reaction sitting next to it. created_at is
+      // second-resolution, so a sort can keep the older entry first on ties.
+      // Reduce with >= so that, all else equal, the later iteration wins —
+      // giving a deterministic "newest" pick even for two toggles in the same
+      // second.
+      const pickLatest = list =>
+        list.reduce((latest, candidate) => {
+          if (!latest) return candidate;
+          return (candidate.created_at || 0) >= (latest.created_at || 0)
+            ? candidate
+            : latest;
+        }, null);
+      const isActive = r => !!r.content && !r.content_attributes?.deleted;
+      return pickLatest(matches.filter(isActive)) || pickLatest(matches);
+    },
+    buildOptimisticReaction(messageId, emoji) {
+      // Use the echo_id as the temporary id so findPendingMessageIndex matches
+      // the real Message arriving later via ActionCable (it carries echo_id).
+      const echoId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      return {
+        id: echoId,
+        echo_id: echoId,
+        content: emoji,
+        conversation_id: this.currentChat?.id,
+        message_type: 1,
+        content_type: 'text',
+        content_attributes: {
+          is_reaction: true,
+          in_reply_to: messageId,
+        },
+        additional_attributes: {},
+        attachments: [],
+        sender: this.currentUser,
+        sender_type: 'User',
+        sender_id: this.currentUserId,
+        private: false,
+        status: 'progress',
+        created_at: Math.floor(Date.now() / 1000),
+      };
+    },
     toggleReplyEditorSize() {
       this.resizableEditorWrapperRef?.toggleEditorExpand?.();
     },
     resetReplyEditorHeight() {
       this.resizableEditorWrapperRef?.resetEditorHeight?.();
+    },
+    getInReplyToMessage(parentMessage) {
+      if (!parentMessage) return {};
+      const inReplyToMessageId = parentMessage.content_attributes?.in_reply_to;
+      if (!inReplyToMessageId) return {};
+
+      return this.currentChat?.messages.find(message => {
+        if (message.id === inReplyToMessageId) {
+          return true;
+        }
+        return false;
+      });
+    },
+    onOpenGroupsEnabledLink() {
+      window.open(wootConstants.INDICA_FACIL_GUIDES_URL, '_blank');
+    },
+    onOpenLinkDeviceModal() {
+      this.showLinkDeviceModal = true;
+    },
+    onCloseLinkDeviceModal() {
+      this.showLinkDeviceModal = false;
+    },
+    onSetupProviderConnection() {
+      this.$store
+        .dispatch('inboxes/setupChannelProvider', this.inbox.id)
+        .catch(e => {
+          // eslint-disable-next-line no-console
+          console.error('Error setting up provider connection:', e);
+          useAlert(
+            this.$t(
+              'CONVERSATION.INBOX.WHATSAPP_PROVIDER_CONNECTION.RECONNECT_FAILED'
+            )
+          );
+        });
     },
   },
 };
@@ -453,6 +834,52 @@ export default {
     class="flex flex-col justify-between flex-grow h-full min-w-0 m-0"
   >
     <div ref="topBannerRef">
+      <template v-if="isAWhatsAppBaileysChannel || isAWhatsAppZapiChannel">
+        <WhatsappLinkDeviceModal
+          v-if="showLinkDeviceModal"
+          :show="showLinkDeviceModal"
+          :on-close="onCloseLinkDeviceModal"
+          :inbox="currentInbox"
+        />
+        <Banner
+          v-if="inboxProviderConnection !== 'open'"
+          color-scheme="alert"
+          class="mt-2 mx-2 rounded-lg overflow-hidden"
+          :banner-message="
+            isAdmin
+              ? $t(
+                  'CONVERSATION.INBOX.WHATSAPP_PROVIDER_CONNECTION.NOT_CONNECTED'
+                )
+              : $t(
+                  'CONVERSATION.INBOX.WHATSAPP_PROVIDER_CONNECTION.NOT_CONNECTED_CONTACT_ADMIN'
+                )
+          "
+          has-action-button
+          :action-button-label="
+            isAdmin
+              ? $t(
+                  'CONVERSATION.INBOX.WHATSAPP_PROVIDER_CONNECTION.LINK_DEVICE'
+                )
+              : ''
+          "
+          :action-button-icon="isAdmin ? '' : 'i-lucide-refresh-cw'"
+          @primary-action="
+            isAdmin ? onOpenLinkDeviceModal() : onSetupProviderConnection()
+          "
+        />
+        <Banner
+          v-if="showReachoutRestriction"
+          color-scheme="alert"
+          class="mt-2 mx-2 rounded-lg overflow-hidden"
+          :banner-message="reachoutRestrictionMessage"
+        />
+        <Banner
+          v-if="showMessageCap"
+          :color-scheme="messageCapBannerScheme"
+          class="mt-2 mx-2 rounded-lg overflow-hidden"
+          :banner-message="messageCapMessage"
+        />
+      </template>
       <Banner
         v-if="!currentChat.can_reply"
         color-scheme="alert"
@@ -467,6 +894,34 @@ export default {
         class="mx-2 mt-2 overflow-hidden rounded-lg"
         :banner-message="$t('CONVERSATION.OLD_INSTAGRAM_INBOX_REPLY_BANNER')"
       />
+      <Banner
+        v-else-if="isGroupLeft"
+        color-scheme="alert"
+        class="mx-2 mt-2 overflow-hidden rounded-lg"
+        :banner-message="$t('CONVERSATION.GROUP_LEFT_BANNER')"
+      />
+      <Banner
+        v-else-if="isAnnouncementModeRestricted"
+        color-scheme="alert"
+        class="mx-2 mt-2 overflow-hidden rounded-lg"
+        :banner-message="$t('CONVERSATION.ANNOUNCEMENT_MODE_BANNER')"
+      />
+      <Banner
+        v-if="isGroupsDisabled && isSuperAdmin"
+        color-scheme="warning"
+        class="mx-2 mt-2 overflow-hidden rounded-lg"
+        :banner-message="$t('CONVERSATION.GROUPS_DISABLED_BANNER')"
+        :notice-message="$t('GENERAL_SETTINGS.SUPER_ADMIN_ONLY_NOTICE')"
+        has-action-button
+        :action-button-label="$t('CONVERSATION.GROUPS_DISABLED_CTA')"
+        @primary-action="onOpenGroupsEnabledLink"
+      />
+      <Banner
+        v-else-if="isGroupsDisabled"
+        color-scheme="warning"
+        class="mx-2 mt-2 overflow-hidden rounded-lg"
+        :banner-message="$t('CONVERSATION.GROUPS_DISABLED_BANNER_NON_ADMIN')"
+      />
     </div>
     <MessageList
       ref="conversationPanelRef"
@@ -475,8 +930,11 @@ export default {
       :first-unread-id="unReadMessages[0]?.id"
       :is-an-email-channel="isAnEmailChannel"
       :inbox-supports-reply-to="inboxSupportsReplyTo"
+      :inbox-supports-edit="inboxSupportsEdit"
+      :inbox-supports-reactions="inboxSupportsReactions"
       :messages="getMessages"
       @retry="handleMessageRetry"
+      @toggle-reaction="handleToggleReaction"
     >
       <template #beforeAll>
         <transition name="slide-up">
