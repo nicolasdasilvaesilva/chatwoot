@@ -1,0 +1,129 @@
+name: Tests
+
+# Suite completa. Mais pesada que o lint, entao roda em push na main,
+# em tags e sob demanda. Use "Run workflow" antes de cortar uma release.
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend tests
+        # --no-cache (padrao do script `test`) estoura memoria no runner;
+        # chamamos o vitest direto com heap maior.
+        run: npx vitest run --no-coverage --reporter=basic
+        env:
+          TZ: UTC
+          NODE_OPTIONS: --max-old-space-size=4096
+
+  backend:
+    name: Backend (rspec ${{ matrix.ci_node_index }}/8)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ci_node_total: [8]
+        ci_node_index: [0, 1, 2, 3, 4, 5, 6, 7]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ''
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --mount type=tmpfs,destination=/var/lib/postgresql/data
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: ''
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Strip enterprise code
+        # Nosso fork e CE. Sem isso os specs enterprise falham por dependencias
+        # que a edicao community nao carrega.
+        run: |
+          rm -rf enterprise
+          rm -rf spec/enterprise
+
+      - name: Prepare database
+        run: |
+          bundle exec rake db:create
+          bundle exec rake db:schema:load
+
+      - name: Run specs (shard ${{ matrix.ci_node_index }} of ${{ matrix.ci_node_total }})
+        run: |
+          # Distribuicao round-robin: espalha os specs lentos entre os shards
+          # em vez de concentrar num so.
+          SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
+          TESTS=""
+          for i in "${!SPEC_FILES[@]}"; do
+            if [ $(( i % ${{ matrix.ci_node_total }} )) -eq ${{ matrix.ci_node_index }} ]; then
+              TESTS="$TESTS ${SPEC_FILES[$i]}"
+            fi
+          done
+          if [ -n "$TESTS" ]; then
+            bundle exec rspec --profile=10 --format progress $TESTS
+          fi
+
+      - name: Upload rails log on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rails-log-${{ matrix.ci_node_index }}
+          path: log
+          retention-days: 5

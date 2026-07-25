@@ -1,0 +1,100 @@
+name: Fork features guard
+
+# Guarda contra regressao das features exclusivas do fork Indica Facil.
+#
+# Motivo: em 2026-07-25 um patch do Chatwoot oficial sobrescreveu 39 arquivos
+# compartilhados e removeu Baileys, Z-API, Chat Interno e Kanban da interface.
+# O build Docker passou VERDE e o ESLint ficou LIMPO. O defeito so apareceu
+# quando alguem abriu a tela de criar caixa de entrada.
+#
+# Este job falha se qualquer uma dessas features sumir do codigo.
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  features:
+    name: Features do fork presentes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar features do fork
+        run: |
+          fail=0
+
+          check() {
+            local label="$1" actual="$2" min="$3"
+            if [ "$actual" -lt "$min" ]; then
+              echo "::error::$label -> encontrado $actual, esperado no minimo $min"
+              fail=1
+            else
+              echo "ok  $label ($actual)"
+            fi
+          }
+
+          echo "--- WhatsApp: provedores Baileys e Z-API ---"
+          check "provedores na tela de canal" \
+            "$(grep -ic 'baileys\|zapi' app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue || echo 0)" 20
+          check "webhook controller" \
+            "$(grep -ic 'baileys\|zapi' app/controllers/webhooks/whatsapp_controller.rb || echo 0)" 2
+          check "handlers baileys" "$(ls app/services/whatsapp/baileys_handlers/ 2>/dev/null | wc -l)" 11
+          check "handlers zapi"    "$(ls app/services/whatsapp/zapi_handlers/ 2>/dev/null | wc -l)" 6
+          check "provider service baileys" \
+            "$(ls app/services/whatsapp/providers/whatsapp_baileys_service.rb 2>/dev/null | wc -l)" 1
+          check "provider service zapi" \
+            "$(ls app/services/whatsapp/providers/whatsapp_zapi_service.rb 2>/dev/null | wc -l)" 1
+
+          echo "--- Chat Interno ---"
+          check "rotas backend"  "$(grep -c 'internal_chat' config/routes.rb || echo 0)" 1
+          check "models"         "$(ls app/models/internal_chat/ 2>/dev/null | wc -l)" 12
+          check "controllers"    "$(ls app/controllers/api/v1/accounts/internal_chat/ 2>/dev/null | wc -l)" 9
+          check "modulos vuex"   "$(grep -c 'internalChat' app/javascript/dashboard/store/index.js || echo 0)" 4
+
+          echo "--- Kanban / Chat Interno no menu ---"
+          check "rotas dashboard" \
+            "$(grep -c 'kanban\|internalChat' app/javascript/dashboard/routes/dashboard/dashboard.routes.js || echo 0)" 4
+
+          echo "--- Mensagens agendadas ---"
+          check "model"   "$(ls app/models/scheduled_message.rb 2>/dev/null | wc -l)" 1
+          check "rotas"   "$(grep -c 'scheduled_messages' config/routes.rb || echo 0)" 1
+
+          echo "--- Extensao WhatsApp Connector (Chrome Web Store) ---"
+          check "ID da extensao Indica Facil" \
+            "$(grep -c 'lnkmkgmicadcmbocnbogggkemjihjjcm' app/javascript/dashboard/routes/dashboard/settings/inbox/components/WhatsappLinkDeviceModal.vue || echo 0)" 1
+
+          echo "--- White-label ---"
+          check "links de licenca" \
+            "$(grep -rl 'licencas.indicafacil.app' app/javascript/ 2>/dev/null | wc -l)" 4
+
+          leftovers=$(grep -rl 'fazer\.ai\|fazer-ai\|fazer_ai\|FazerAi' \
+            --include='*.rb' --include='*.vue' --include='*.js' --include='*.erb' \
+            app/ config/ lib/ 2>/dev/null | wc -l)
+          if [ "$leftovers" -ne 0 ]; then
+            echo "::error::restaram $leftovers arquivos com referencia a fazer.ai"
+            grep -rl 'fazer\.ai\|fazer-ai\|fazer_ai\|FazerAi' \
+              --include='*.rb' --include='*.vue' --include='*.js' --include='*.erb' \
+              app/ config/ lib/ 2>/dev/null
+            fail=1
+          else
+            echo "ok  nenhuma referencia a fazer.ai"
+          fi
+
+          echo "--- Versao ---"
+          echo "VERSION_CW = $(cat VERSION_CW)"
+          if ! grep -q "$(cat VERSION_CW)" config/app.yml; then
+            echo "::error::VERSION_CW e config/app.yml divergem"
+            fail=1
+          else
+            echo "ok  VERSION_CW e config/app.yml batem"
+          fi
+
+          exit $fail
