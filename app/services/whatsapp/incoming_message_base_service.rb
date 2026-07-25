@@ -310,15 +310,19 @@ class Whatsapp::IncomingMessageBaseService # rubocop:disable Metrics/ClassLength
     @in_reply_to_external_id
   end
 
+  # NOTE: upstream 4.16.1 widened this to `@contact.conversations.where(inbox_id:)`
+  # for WhatsApp coexistence (one contact, multiple source_ids: phone + BSUID).
+  # We do NOT adopt it: the fork's Baileys/Zapi flows and reaction anchoring rely
+  # on contact_inbox scoping, and widening it broke the specs covering
+  # conversation reuse, reply anchoring and reaction senders. Revisit only with
+  # those specs updated deliberately.
   def conversation_by_inbox_config
-    # Scope reuse to the contact across all its contact_inboxes in this inbox: WhatsApp coexistence
-    # gives one contact multiple source_ids (phone + BSUID), so reopen must not be limited to a single contact_inbox.
-    conversations = @contact.conversations.where(inbox_id: @inbox.id)
     # if lock to single conversation is disabled, we will create a new conversation if previous conversation is resolved
     if @inbox.lock_to_single_conversation
-      conversations.last
+      @inbox.conversations.where(contact_id: @contact_inbox.contact_id).last
     else
-      conversations.where.not(status: :resolved).last
+      @contact_inbox.conversations
+                    .where.not(status: :resolved).last
     end
   end
 
