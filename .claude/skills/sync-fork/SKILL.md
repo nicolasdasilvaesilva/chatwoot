@@ -1,10 +1,22 @@
 ---
 name: sync-fork
-description: Use this skill when syncing one of our forks with its upstream — either pulling chatwoot/chatwoot into indica-facil/chatwoot, OR pulling indica-facil/chatwoot `main` into indica-facil/chatwoot-pro (`chatwoot-pro-main`). Covers per-file decision framework (KC/AI/CO/delete), recurring patterns (SaveBang, signature architecture, schema.rb regen, WhatsApp service, installation_config, Pro-only overrides), validation flow, and pre-commit/CI pitfalls specific to this repo. Trigger when the user asks to merge develop/main from chatwoot upstream, resolve merge conflicts on a merge branch, bump the fork to a new chatwoot version, or merge CE `main` into `chatwoot-pro-main`. **Never assume the sync direction — always confirm with the user which side is upstream and which is the receiving fork before doing anything.**
+description: "[HERDADA DA FAZER.AI — NÃO É O FLUXO PADRÃO DAQUI] Use apenas para merge via git remote com upstream, ou para propagar CE main → Pro (chatwoot-pro-main). Para o fluxo normal deste repo escolha: zip de release da fazer.ai → sync-fazerai; Chatwoot oficial → sync-oficial. Cobre merge de fork com upstream — either pulling chatwoot/chatwoot into indica-facil/chatwoot, OR pulling indica-facil/chatwoot `main` into indica-facil/chatwoot-pro (`chatwoot-pro-main`)." Covers per-file decision framework (KC/AI/CO/delete), recurring patterns (SaveBang, signature architecture, schema.rb regen, WhatsApp service, installation_config, Pro-only overrides), validation flow, and pre-commit/CI pitfalls specific to this repo. Trigger when the user asks to merge develop/main from chatwoot upstream, resolve merge conflicts on a merge branch, bump the fork to a new chatwoot version, or merge CE `main` into `chatwoot-pro-main`. **Never assume the sync direction — always confirm with the user which side is upstream and which is the receiving fork before doing anything.**
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 ---
 
 # Sync fork — (chatwoot → indica-facil CE) and (indica-facil CE → indica-facil Pro)
+
+> ## ⚠️ Provavelmente não é esta a skill que você quer
+>
+> Esta skill veio da fazer.ai e assume `git merge` com um remote upstream configurado. **Não é o fluxo normal deste repositório.**
+>
+> | Situação | Skill correta |
+> |---|---|
+> | Saiu release nova da fazer.ai (arquivo `.zip`) | **`sync-fazerai`** |
+> | Trazer melhorias do Chatwoot oficial | **`sync-oficial`** |
+> | `git merge` com remote upstream, ou propagar CE `main` → Pro | esta aqui |
+>
+> Confirme com o usuário antes de seguir.
 
 > **Direction is never implicit.** Before reading any further, confirm with the user which sync flow this is: `chatwoot/chatwoot → indica-facil/chatwoot` (CE merge) or `indica-facil/chatwoot → indica-facil/chatwoot-pro` (Pro merge). Both flows share most patterns but diverge on branch names, push targets, and which side is HEAD. Picking the wrong flow silently inverts the KC/AI decisions in every recurring pattern below — do not infer from context, ask.
 
