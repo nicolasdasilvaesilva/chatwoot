@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 
 import MessageMeta from '../MessageMeta.vue';
-import ReferralCard from './ReferralCard.vue';
+import CaptainGenerationDetails from '../CaptainGenerationDetails.vue';
 
 import { emitter } from 'shared/helpers/mitt';
 import { useMessageContext } from '../provider.js';
@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 
 import MessageFormatter from 'shared/helpers/MessageFormatter.js';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
-import { MESSAGE_VARIANTS, ORIENTATION } from '../constants';
+import { MESSAGE_VARIANTS, ORIENTATION, SENDER_TYPES } from '../constants';
 
 const props = defineProps({
   hideMeta: { type: Boolean, default: false },
@@ -21,18 +21,25 @@ const {
   orientation,
   inReplyTo,
   shouldGroupWithNext,
-  additionalAttributes,
-  contentAttributes,
+  id,
+  sender,
+  senderType,
 } = useMessageContext();
 const { t } = useI18n();
 
-// Click-to-WhatsApp ad metadata attached to the first message after an ad click.
-const referral = computed(() => contentAttributes.value?.referral);
+const isCaptainMessage = computed(
+  () =>
+    (sender.value?.type ?? senderType.value) === SENDER_TYPES.CAPTAIN_ASSISTANT
+);
 
-// The contact deleted/revoked this message on WhatsApp. We keep the content
-// readable but mute the bubble and add a dashed border to signal the deletion.
-const deletedByContact = computed(
-  () => contentAttributes.value?.deletedByContact === true
+const metaColorClass = computed(() =>
+  variant.value === MESSAGE_VARIANTS.PRIVATE
+    ? 'text-n-amber-12/50'
+    : 'text-n-slate-11'
+);
+
+const emailMetaClass = computed(() =>
+  variant.value === MESSAGE_VARIANTS.EMAIL ? 'px-3 pb-3' : ''
 );
 
 const varaintBaseMap = {
@@ -67,16 +74,6 @@ const flexOrientationClass = computed(() => {
   return map[orientation.value];
 });
 
-const isScheduledMessage = computed(
-  () => !!additionalAttributes.value?.scheduledMessageId
-);
-
-const scheduledMessageClass = computed(() => {
-  if (!isScheduledMessage.value) return '';
-  if (variant.value === MESSAGE_VARIANTS.AGENT) return 'bg-n-solid-iris';
-  return '';
-});
-
 const messageClass = computed(() => {
   const classToApply = [varaintBaseMap[variant.value]];
 
@@ -84,14 +81,6 @@ const messageClass = computed(() => {
     classToApply.push(orientationMap[orientation.value]);
   } else {
     classToApply.push('rounded-lg');
-  }
-
-  if (scheduledMessageClass.value) {
-    classToApply.push(scheduledMessageClass.value);
-  }
-
-  if (deletedByContact.value) {
-    classToApply.push('border-2 border-dashed border-n-slate-7 opacity-75');
   }
 
   return classToApply;
@@ -137,7 +126,6 @@ const replyToPreview = computed(() => {
       },
     ]"
   >
-    <ReferralCard v-if="referral" :referral="referral" />
     <div
       v-if="inReplyTo"
       class="p-2 -mx-1 mb-2 rounded-lg cursor-pointer bg-n-alpha-black1"
@@ -149,16 +137,21 @@ const replyToPreview = computed(() => {
       />
     </div>
     <slot />
-    <MessageMeta
-      v-if="shouldShowMeta"
-      :class="[
-        flexOrientationClass,
-        variant === MESSAGE_VARIANTS.EMAIL ? 'px-3 pb-3' : '',
-        variant === MESSAGE_VARIANTS.PRIVATE
-          ? 'text-n-amber-12/50'
-          : 'text-n-slate-11',
-      ]"
-      class="mt-2"
-    />
+    <template v-if="shouldShowMeta">
+      <CaptainGenerationDetails
+        v-if="isCaptainMessage"
+        :message-id="id"
+        class="mt-2"
+      >
+        <template #meta>
+          <MessageMeta :class="[emailMetaClass, metaColorClass]" />
+        </template>
+      </CaptainGenerationDetails>
+      <MessageMeta
+        v-else
+        :class="[flexOrientationClass, emailMetaClass, metaColorClass]"
+        class="mt-2"
+      />
+    </template>
   </div>
 </template>

@@ -3,8 +3,9 @@ class InternalChat::Limits
     false
   end
 
+  # Indica Fácil: enquetes liberadas no Free (demais limites seguem Pro-only)
   def self.polls_enabled?
-    unlimited?
+    true
   end
 
   def self.max_private_channels

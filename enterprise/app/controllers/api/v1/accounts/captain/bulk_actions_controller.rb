@@ -1,5 +1,4 @@
 class Api::V1::Accounts::Captain::BulkActionsController < Api::V1::Accounts::BaseController
-  before_action :current_account
   before_action -> { check_authorization(Captain::Assistant) }
   before_action :validate_params
   before_action :type_matches?
@@ -22,7 +21,7 @@ class Api::V1::Accounts::Captain::BulkActionsController < Api::V1::Accounts::Bas
   end
 
   def type_matches?
-    return false if MODEL_TYPE.include?(params[:type])
+    return if MODEL_TYPE.include?(params[:type])
 
     render json: { success: false }, status: :unprocessable_content
   end
@@ -42,7 +41,7 @@ class Api::V1::Accounts::Captain::BulkActionsController < Api::V1::Accounts::Bas
 
     case params[:fields][:status]
     when 'approve'
-      responses.pending.update!(status: 'approved')
+      responses.pending.update(status: 'approved')
       responses
     when 'delete'
       responses.destroy_all

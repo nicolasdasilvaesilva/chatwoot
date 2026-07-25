@@ -23,6 +23,8 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def destroy
+    authorize message, :destroy?
+
     ActiveRecord::Base.transaction do
       message.update!(content: I18n.t('conversations.messages.deleted'), content_type: :text, content_attributes: { deleted: true })
       message.attachments.destroy_all
@@ -58,6 +60,9 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     end
 
     render json: { content: translated_content }
+  rescue Google::Cloud::Error => e
+    # `details` carries the clean human message; `message` includes gRPC debug noise
+    render_could_not_create_error(e.details.presence || e.message)
   end
 
   def edit_content

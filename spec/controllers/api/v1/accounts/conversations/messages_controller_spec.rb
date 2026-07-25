@@ -51,6 +51,22 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(json_response['error']).to eq('Validation failed: Content is too long (maximum is 150000 characters)')
       end
 
+      it 'returns a customer-safe error when the database query is canceled' do
+        message_builder = instance_double(Messages::MessageBuilder)
+        allow(Messages::MessageBuilder).to receive(:new).and_return(message_builder)
+        allow(message_builder).to receive(:perform)
+          .and_raise(ActiveRecord::QueryCanceled, 'PG::QueryCanceled: ERROR: canceling statement due to statement timeout')
+
+        post api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id),
+             params: { content: 'test-message', private: true },
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq(I18n.t('errors.database.query_canceled'))
+        expect(response.parsed_body['error']).not_to include('PG::QueryCanceled')
+      end
+
       it 'creates an outgoing text message with a specific bot sender' do
         agent_bot = create(:agent_bot)
         time_stamp = Time.now.utc.to_s
@@ -131,7 +147,13 @@ RSpec.describe 'Conversation Messages API', type: :request do
           expect(Conversations::ActivityMessageJob)
             .to(have_been_enqueued.at_least(:once)
               .with(conversation, { account_id: conversation.account_id, inbox_id: conversation.inbox_id, message_type: :activity,
-                                    content: 'System reopened the conversation due to a new incoming message.' }))
+                                    content: 'System reopened the conversation due to a new incoming message.',
+                                    content_attributes: {
+                                      activity: {
+                                        type: 'conversation_status_changed',
+                                        status: 'open'
+                                      }
+                                    } }))
         end
       end
     end
@@ -357,6 +379,35 @@ RSpec.describe 'Conversation Messages API', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(message_with_source.reload.deleted).to be true
+      end
+    end
+
+    context 'when the account blocks agent message deletion' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:administrator) { create(:user, account: account, role: :administrator) }
+
+      before do
+        create(:inbox_member, inbox: conversation.inbox, user: agent)
+        create(:inbox_member, inbox: conversation.inbox, user: administrator)
+        account.update!(disable_agent_message_deletion: true)
+      end
+
+      it 'refuses the deletion for an agent' do
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}",
+               headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(message.reload.deleted).to be_falsey
+      end
+
+      it 'still allows an administrator to delete' do
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}",
+               headers: administrator.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(message.reload.deleted).to be true
       end
     end
   end

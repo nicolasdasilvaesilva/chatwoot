@@ -72,6 +72,21 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
+      it 'fails a free-form message without contacting the provider when outside the 24 hour limit' do
+        create(:message, message_type: :incoming, content: 'test', created_at: 25.hours.ago,
+                         conversation: conversation, account: conversation.account)
+        message = create(:message, message_type: :outgoing, content: 'test',
+                                   conversation: conversation, account: conversation.account)
+
+        expect(Whatsapp::TemplateProcessorService).not_to receive(:new)
+
+        described_class.new(message: message).perform
+
+        expect(message.reload.status).to eq('failed')
+        expect(message.external_error).to eq(I18n.t('errors.whatsapp.message_outside_messaging_window'))
+        expect(a_request(:post, 'https://waba.360dialog.io/v1/messages')).not_to have_been_made
+      end
+
       it 'marks message as failed when template name is blank' do
         processor = instance_double(Whatsapp::TemplateProcessorService)
         allow(Whatsapp::TemplateProcessorService).to receive(:new).and_return(processor)
@@ -378,137 +393,6 @@ describe Whatsapp::SendOnWhatsappService do
               type: 'template'
             }.to_json
           ).to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
-      end
-    end
-
-    context 'when provider is baileys' do
-      let(:whatsapp_channel) { create(:channel_whatsapp, provider: 'baileys', validate_provider_config: true) }
-      let(:contact_inbox) { create(:contact_inbox, inbox: whatsapp_channel.inbox, source_id: '123456789') }
-      let(:conversation) { create(:conversation, contact_inbox: contact_inbox, inbox: whatsapp_channel.inbox) }
-
-      before do
-        stub_request(:get, 'https://baileys.api/status/auth')
-          .with(
-            headers: {
-              'Accept' => '*/*',
-              'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-              'Content-Type' => 'application/json',
-              'User-Agent' => 'Ruby',
-              'X-Api-Key' => 'test_key'
-            }
-          )
-          .to_return(status: 200, body: '', headers: {})
-      end
-
-      it 'uses phone number as recipient_id for individual contacts' do
-        conversation.contact.update!(phone_number: '+123456789')
-        message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-        allow(whatsapp_channel).to receive(:send_message).with('123456789', message).and_return('123456789')
-
-        described_class.new(message: message).perform
-
-        expect(message.reload.source_id).to eq('123456789')
-      end
-
-      it 'falls back to identifier when contact has no phone_number' do
-        conversation.contact.update!(phone_number: nil, identifier: '99999999@lid')
-        message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-        allow(whatsapp_channel).to receive(:send_message).with('99999999@lid', message).and_return('msg_lid')
-
-        described_class.new(message: message).perform
-
-        expect(message.reload.source_id).to eq('msg_lid')
-      end
-
-      it 'uses identifier as recipient_id for group contacts' do
-        conversation.contact.update!(identifier: '123456789123456789@g.us', group_type: :group)
-        message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-        allow(whatsapp_channel).to receive(:send_message).with('123456789123456789@g.us', message).and_return('msg_group')
-
-        described_class.new(message: message).perform
-
-        expect(message.reload.source_id).to eq('msg_group')
-      end
-
-      describe 'duplicate send on Net::ReadTimeout retry' do
-        let(:send_message_url) do
-          "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}/send-message"
-        end
-        let(:setup_url) do
-          "#{whatsapp_channel.provider_config['provider_url']}/connections/#{whatsapp_channel.phone_number}"
-        end
-        let(:success_body) { { data: { key: { id: 'wa_msg_123' }, messageTimestamp: '123' } }.to_json }
-
-        before do
-          conversation.contact.update!(phone_number: '+123456789')
-          create(:message, message_type: :incoming, content: 'hi', conversation: conversation)
-          stub_request(:post, setup_url).to_return(status: 200, body: '', headers: {})
-        end
-
-        it 'sends the message twice when first attempt times out and job is retried' do
-          message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation, source_id: nil)
-
-          stub = stub_request(:post, send_message_url)
-                 .with { |req| JSON.parse(req.body)['chatwootMessageId'].to_s.start_with?("#{message.id}:") }
-                 .to_raise(Net::ReadTimeout.new('Net::ReadTimeout'))
-                 .then
-                 .to_return(status: 200, body: success_body, headers: { 'Content-Type' => 'application/json' })
-
-          expect { SendReplyJob.perform_now(message.id) }.to(raise_error { |e| expect(e.class.name).to eq('Net::ReadTimeout') })
-          expect(message.reload.source_id).to be_nil
-
-          SendReplyJob.perform_now(message.id)
-          expect(message.reload.source_id).to eq('wa_msg_123')
-
-          expect(stub).to have_been_requested.twice
-        end
-      end
-    end
-
-    context 'when provider is zapi' do
-      let(:whatsapp_channel) { create(:channel_whatsapp, provider: 'zapi', validate_provider_config: false) }
-      let(:contact_inbox) { create(:contact_inbox, inbox: whatsapp_channel.inbox, source_id: '123456789') }
-      let(:conversation) { create(:conversation, contact_inbox: contact_inbox, inbox: whatsapp_channel.inbox) }
-      let(:success_response) { { 'messageId' => 'msg_123' }.to_json }
-
-      before do
-        stub_request(:post, /.*/)
-          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
-      end
-
-      context 'with recipient_id logic' do
-        it 'uses phone number when contact has phone_number for session messages' do
-          conversation.contact.update!(phone_number: '+5511987654321')
-          create(:message, message_type: :incoming, content: 'test', conversation: conversation)
-          message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-          expect(whatsapp_channel).to receive(:send_message).with('5511987654321', message).and_return('msg_123')
-
-          described_class.new(message: message).perform
-        end
-
-        it 'uses identifier with @lid suffix when contact has no phone_number for session messages' do
-          conversation.contact.update!(phone_number: nil, identifier: '123456789@lid')
-          create(:message, message_type: :incoming, content: 'test', conversation: conversation)
-          message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-          expect(whatsapp_channel).to receive(:send_message).with('123456789@lid', message).and_return('msg_123')
-
-          described_class.new(message: message).perform
-        end
-
-        it 'uses identifier as recipient_id for group contacts' do
-          conversation.contact.update!(identifier: '120363123456789@g.us', group_type: :group)
-          create(:message, message_type: :incoming, content: 'test', conversation: conversation)
-          message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
-
-          expect(whatsapp_channel).to receive(:send_message).with('120363123456789@g.us', message).and_return('msg_group')
-
-          described_class.new(message: message).perform
-        end
       end
     end
   end

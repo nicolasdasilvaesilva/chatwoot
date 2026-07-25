@@ -7,6 +7,7 @@ import FBChannel from '../../api/channel/fbChannel';
 import TwilioChannel from '../../api/channel/twilioChannel';
 import WhatsappChannel from '../../api/channel/whatsappChannel';
 import { throwErrorMessage } from '../utils/api';
+import { isSendableTemplate } from '@chatwoot/utils';
 import AnalyticsHelper from '../../helper/AnalyticsHelper';
 import camelcaseKeys from 'camelcase-keys';
 import { ACCOUNT_EVENTS } from '../../helper/AnalyticsHelper/events';
@@ -67,45 +68,8 @@ export const getters = {
       return [];
     }
 
-    return templates.filter(template => {
-      // Ensure template has required properties
-      if (!template || !template.status || !template.components) {
-        return false;
-      }
-
-      // Only show approved templates
-      if (template.status.toLowerCase() !== 'approved') {
-        return false;
-      }
-
-      // Filter out authentication templates
-      if (template.category === 'AUTHENTICATION') {
-        return false;
-      }
-
-      // Filter out CSAT templates (customer_satisfaction_survey and its versions)
-      if (
-        template.name &&
-        template.name.startsWith('customer_satisfaction_survey')
-      ) {
-        return false;
-      }
-
-      // Filter out interactive templates (LIST, PRODUCT, CATALOG), location templates, and call permission templates
-      const hasUnsupportedComponents = template.components.some(
-        component =>
-          ['LIST', 'PRODUCT', 'CATALOG', 'CALL_PERMISSION_REQUEST'].includes(
-            component.type
-          ) ||
-          (component.type === 'HEADER' && component.format === 'LOCATION')
-      );
-
-      if (hasUnsupportedComponents) {
-        return false;
-      }
-
-      return true;
-    });
+    // Sendable-template filtering is shared with the mobile app via @chatwoot/utils.
+    return templates.filter(isSendableTemplate);
   },
   getNewConversationInboxes($state) {
     return $state.records.filter(inbox => {
@@ -200,14 +164,6 @@ export const actions = {
       // Ignore error
     }
   },
-  updateProviderConnection: async ({ commit }, { id, providerConnection }) => {
-    commit(types.default.SET_INBOX_PROVIDER_CONNECTION, {
-      id,
-      providerConnection,
-    });
-    // Keep the local cache fresh without bumping the cache key (no full refetch).
-    await InboxesAPI.updateCachedProviderConnection(id, providerConnection);
-  },
   get: async ({ commit }) => {
     commit(types.default.SET_INBOXES_UI_FLAG, { isFetching: true });
     try {
@@ -284,19 +240,6 @@ export const actions = {
       throw error;
     }
   },
-  convertWhatsAppEmbeddedSignup: async ({ commit, dispatch }, params) => {
-    commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: true });
-    try {
-      const response =
-        await WhatsappChannel.postEmbeddedSignupAuthorization(params);
-      await dispatch('get');
-      commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: false });
-      return response.data;
-    } catch (error) {
-      commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: false });
-      throw error;
-    }
-  },
   ...channelActions,
   // TODO: Extract other create channel methods to separate files to reduce file size
   // - createChannel
@@ -315,24 +258,6 @@ export const actions = {
     } catch (error) {
       commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: false });
       throwErrorMessage(error);
-    }
-  },
-  convertProvider: async (
-    { commit },
-    { inboxId, provider, providerConfig }
-  ) => {
-    commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: true });
-    try {
-      const response = await InboxesAPI.convertProvider(inboxId, {
-        provider,
-        providerConfig,
-      });
-      commit(types.default.EDIT_INBOXES, response.data);
-      commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: false });
-      return response.data;
-    } catch (error) {
-      commit(types.default.SET_INBOXES_UI_FLAG, { isUpdating: false });
-      return throwErrorMessage(error);
     }
   },
   updateInboxIMAP: async ({ commit }, { id, ...inboxParams }) => {
@@ -415,28 +340,6 @@ export const actions = {
       return null;
     }
   },
-  linkCSATTemplate: async (_, { inboxId, template }) => {
-    const response = await InboxesAPI.linkCSATTemplate(inboxId, template);
-    return response.data;
-  },
-  getAvailableCSATTemplates: async (_, { inboxId }) => {
-    const response = await InboxesAPI.getAvailableCSATTemplates(inboxId);
-    return response.data;
-  },
-  setupChannelProvider: async (_, inboxId) => {
-    try {
-      await InboxesAPI.setupChannelProvider(inboxId);
-    } catch (error) {
-      throwErrorMessage(error);
-    }
-  },
-  disconnectChannelProvider: async (_, inboxId) => {
-    try {
-      await InboxesAPI.disconnectChannelProvider(inboxId);
-    } catch (error) {
-      throwErrorMessage(error);
-    }
-  },
 };
 
 export const mutations = {
@@ -448,15 +351,6 @@ export const mutations = {
   [types.default.ADD_INBOXES]: MutationHelpers.create,
   [types.default.EDIT_INBOXES]: MutationHelpers.update,
   [types.default.DELETE_INBOXES]: MutationHelpers.destroy,
-  [types.default.SET_INBOX_PROVIDER_CONNECTION](
-    $state,
-    { id, providerConnection }
-  ) {
-    const inbox = $state.records.find(record => record.id === Number(id));
-    if (inbox) {
-      inbox.provider_connection = providerConnection;
-    }
-  },
 };
 
 export default {

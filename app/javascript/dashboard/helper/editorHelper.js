@@ -1,4 +1,6 @@
 import {
+  InputRule,
+  inputRules,
   MessageMarkdownSerializer,
   MessageMarkdownTransformer,
   messageSchema,
@@ -131,6 +133,16 @@ const stripDelimiterHardbreaks = body =>
 const stripTrailingBlankLine = body => body.replace(/\n(?:\s*\\\n)+$/, '');
 
 /**
+ * Adds the signature delimiter to the beginning of the signature.
+ *
+ * @param {string} signature - The signature to add the delimiter to.
+ * @returns {string} - The signature with the delimiter added.
+ */
+function appendDelimiter(signature) {
+  return `${SIGNATURE_DELIMITER}\n\n${cleanSignature(signature)}`;
+}
+
+/**
  * Check if there's an unedited signature at the end of the body
  * If there is, return the index of the signature, If there isn't, return -1
  *
@@ -173,28 +185,22 @@ export function getEffectiveChannelType(channelType, medium) {
  *
  * @param {string} body - The body to append the signature to.
  * @param {string} signature - The signature to append.
- * @param {Object} settings - The signature settings (position, separator).
+ * @param {string} channelType - Optional. The effective channel type to determine supported formatting.
+ *                               For Twilio channels, pass the result of getEffectiveChannelType().
  * @returns {string} - The body with the signature appended.
  */
-export function appendSignature(body, signature, settings = {}) {
-  const position = settings.position || 'top';
-  const separator = settings.separator || 'blank';
-  const cleanedSignature = cleanSignature(signature);
+export function appendSignature(body, signature, channelType) {
+  // Strip only unsupported formatting based on channel capabilities
+  const preparedSignature = channelType
+    ? stripUnsupportedMarkdown(signature, channelType)
+    : signature;
+  const cleanedSignature = cleanSignature(preparedSignature);
   // if signature is already present, return body
-  if (findSignatureInBody(body, cleanedSignature).index > -1) {
+  if (findSignatureInBody(body, cleanedSignature) > -1) {
     return body;
   }
 
-  const delimiter =
-    {
-      blank: '\n\n',
-      '--': '\n\n--\n\n',
-    }[separator] || separator;
-
-  if (position === 'top') {
-    return `${cleanedSignature}${delimiter}${body.trimStart()}`;
-  }
-  return `${body.trimEnd()}${delimiter}${cleanedSignature}`;
+  return `${body.trimEnd()}\n\n${appendDelimiter(cleanedSignature)}`;
 }
 
 /**
@@ -424,6 +430,55 @@ export function stripUnsupportedFormatting(content, schema) {
  * - emoji
  */
 
+// Liquid delimiters ({{ }} / {% %}) the backend evaluates on send.
+const LIQUID_SYNTAX = /\{\{|\{%/;
+
+// Value when set (and not itself Liquid), else the {{placeholder}} for the backend.
+export const resolveVariableText = (key, variables) => {
+  const value = String(variables?.[key] ?? '');
+  return value && !LIQUID_SYNTAX.test(value) ? value : `{{${key}}}`;
+};
+
+// Name variables normalized like the backend drops (UserDrop/ContactDrop):
+// name split on whitespace, each word Ruby-capitalized (rest downcased).
+const getNameVariables = (prefix, name) => {
+  const names = (name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+  return {
+    [`${prefix}.name`]: names.join(' '),
+    [`${prefix}.first_name`]: names[0] || '',
+    [`${prefix}.last_name`]: names.length > 1 ? names[names.length - 1] : '',
+  };
+};
+
+// {{agent.*}} values for the message sender.
+export const getAgentVariables = user => ({
+  ...getNameVariables('agent', user.name),
+  'agent.email': user.email,
+});
+
+// {{contact.*}} name values.
+export const getContactVariables = contact =>
+  getNameVariables('contact', contact?.name);
+
+// Resolves a manually typed {{variable}} to its value on the closing braces.
+// Leaves the placeholder when there's no value, the value is Liquid, or it's a private note.
+export const createVariableInputRule = ({ isPrivate, getVariables }) => {
+  const rule = new InputRule(
+    /\{\{([^{}]+)\}\}$/,
+    (editorState, match, from, to) => {
+      if (isPrivate()) return null;
+      const [, key] = match;
+      const text = resolveVariableText(key, getVariables());
+      if (text === `{{${key}}}`) return null;
+      return editorState.tr.insertText(text, from, to);
+    }
+  );
+  return inputRules({ rules: [rule] });
+};
+
 /**
  * Centralized node creation function that handles the creation of different types of nodes based on the specified type.
  * @param {Object} editorView - The editor view instance.
@@ -458,7 +513,7 @@ const createNode = (editorView, nodeType, content) => {
       );
     }
     case 'variable':
-      return state.schema.text(`{{${content}}}`);
+      return state.schema.text(content);
     case 'emoji':
       return state.schema.text(content);
     case 'tool': {
@@ -493,8 +548,12 @@ const nodeCreators = {
       to,
     };
   },
-  variable: (editorView, content, from, to) => ({
-    node: createNode(editorView, 'variable', content),
+  variable: (editorView, content, from, to, variables) => ({
+    node: createNode(
+      editorView,
+      'variable',
+      resolveVariableText(content, variables)
+    ),
     from,
     to,
   }),

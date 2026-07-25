@@ -7,6 +7,7 @@
 #  custom_attributes     :jsonb
 #  domain                :string(100)
 #  feature_flags         :bigint           default(0), not null
+#  feature_flags_ext_1   :bigint           default(0), not null
 #  internal_attributes   :jsonb            not null
 #  limits                :jsonb
 #  locale                :integer          default("en")
@@ -23,7 +24,7 @@
 #
 
 class Account < ApplicationRecord
-  # used for single column multi flags
+  # used for multi-flag bitset columns
   include FlagShihTzu
   include Reportable
   include Featurable
@@ -54,18 +55,8 @@ class Account < ApplicationRecord
   store_accessor :settings, :captain_models, :captain_features
   store_accessor :settings, :reporting_timezone
   store_accessor :settings, :keep_pending_on_bot_failure
-  store_accessor :settings, :captain_auto_resolve_mode
-  store_accessor :settings, :hide_agent_unassigned_tab, :hide_agent_all_tab
-  before_validation :enforce_agent_assignee_tabs_constraint
-
-  def hide_agent_unassigned_tab=(value)
-    super(ActiveModel::Type::Boolean.new.cast(value))
-  end
-
-  def hide_agent_all_tab=(value)
-    super(ActiveModel::Type::Boolean.new.cast(value))
-  end
-
+  store_accessor :settings, :captain_auto_resolve_mode, :captain_false_promise_harness_enabled
+  include AccountAgentRestrictions
   include AccountCaptainAutoResolve
 
   has_many :account_users, dependent: :destroy_async
@@ -169,6 +160,10 @@ class Account < ApplicationRecord
     }
   end
 
+  def api_and_webhooks_enabled?
+    true
+  end
+
   def locale_english_name
     # the locale can also be something like pt_BR, en_US, fr_FR, etc.
     # the format is `<locale_code>_<country_code>`
@@ -220,10 +215,6 @@ class Account < ApplicationRecord
     return if reporting_timezone.blank? || ActiveSupport::TimeZone[reporting_timezone].present?
 
     errors.add(:reporting_timezone, I18n.t('errors.account.reporting_timezone.invalid'))
-  end
-
-  def enforce_agent_assignee_tabs_constraint
-    self.hide_agent_all_tab = true if hide_agent_unassigned_tab
   end
 
   def validate_support_email_format

@@ -6,7 +6,6 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
   retry_on LockAcquisitionError, wait: 2.seconds, attempts: 20
 
   def perform(params = {})
-    dump_raw_payload(params)
     channel = find_channel_from_whatsapp_business_payload(params)
 
     if channel_is_inactive?(channel)
@@ -81,27 +80,12 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
     case channel.provider
     when 'whatsapp_cloud'
       Whatsapp::IncomingMessageWhatsappCloudService.new(inbox: channel.inbox, params: params).perform
-    when 'baileys'
-      Whatsapp::IncomingMessageBaileysService.new(inbox: channel.inbox, params: params).perform
-    when 'zapi'
-      Whatsapp::IncomingMessageZapiService.new(inbox: channel.inbox, params: params).perform
     else
       Whatsapp::IncomingMessageService.new(inbox: channel.inbox, params: params).perform
     end
   end
 
   private
-
-  # Debug aid for non-production only: set WHATSAPP_WEBHOOK_DEBUG=true to log the
-  # raw inbound webhook payload (Baileys or Cloud) so you can capture a real
-  # Click-to-WhatsApp ad referral / externalAdReply and replay it later. Logs
-  # full message content, so it never runs in production and is off by default.
-  def dump_raw_payload(params)
-    return if Rails.env.production?
-    return unless ActiveModel::Type::Boolean.new.cast(ENV.fetch('WHATSAPP_WEBHOOK_DEBUG', false))
-
-    Rails.logger.info("[WhatsappWebhookDebug] #{params.to_json}")
-  end
 
   # Echo payloads reverse the fields — `from` is the business number and `to` is the contact.
   # Returns nil for status-only webhooks so they bypass the lock.
@@ -169,11 +153,11 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
   end
 
   def get_channel_from_wb_payload(wb_params)
-    phone_number = "+#{wb_params[:entry].first[:changes].first.dig(:value, :metadata, :display_phone_number)}"
-    phone_number_id = wb_params[:entry].first[:changes].first.dig(:value, :metadata, :phone_number_id)
-    channel = Channel::Whatsapp.find_by(phone_number: phone_number)
-    # validate to ensure the phone number id matches the whatsapp channel
-    return channel if channel && channel.provider_config['phone_number_id'] == phone_number_id
+    metadata = wb_params[:entry].first[:changes].first.dig(:value, :metadata) || {}
+    Whatsapp::WebhookChannelFinderService.new(
+      display_phone_number: metadata[:display_phone_number],
+      phone_number_id: metadata[:phone_number_id]
+    ).perform
   end
 end
 

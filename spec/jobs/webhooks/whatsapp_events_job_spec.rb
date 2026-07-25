@@ -230,7 +230,7 @@ RSpec.describe Webhooks::WhatsappEventsJob do
   context 'when default provider' do
     it 'enqueue Whatsapp::IncomingMessageService' do
       stub_request(:post, 'https://waba.360dialog.io/v1/configs/webhook')
-      channel.update!(provider: 'default')
+      channel.update(provider: 'default')
       allow(Whatsapp::IncomingMessageService).to receive(:new).and_return(process_service)
       expect(Whatsapp::IncomingMessageService).to receive(:new)
       job.perform_now(params)
@@ -264,7 +264,7 @@ RSpec.describe Webhooks::WhatsappEventsJob do
       job.perform_now(wb_params)
     end
 
-    it 'creates a reaction message flagged with is_reaction' do
+    it 'Ignore reaction type message and stop raising error' do
       other_channel = create(:channel_whatsapp, phone_number: '+1987654', provider: 'whatsapp_cloud', sync_templates: false,
                                                 validate_provider_config: false)
       wb_params = {
@@ -275,9 +275,7 @@ RSpec.describe Webhooks::WhatsappEventsJob do
             value: {
               contacts: [{ profile: { name: 'Test Test' }, wa_id: '1111981136571' }],
               messages: [{
-                from: '1111981136571', id: 'wamid.REACTION_ID',
-                reaction: { message_id: 'wamid.ORIGINAL_ID', emoji: '👍' },
-                timestamp: '1664799904', type: 'reaction'
+                from: '1111981136571', reaction: { emoji: '👍' }, timestamp: '1664799904', type: 'reaction'
               }],
               metadata: {
                 phone_number_id: other_channel.provider_config['phone_number_id'],
@@ -287,17 +285,12 @@ RSpec.describe Webhooks::WhatsappEventsJob do
           }]
         }]
       }.with_indifferent_access
-
       expect do
         Whatsapp::IncomingMessageWhatsappCloudService.new(inbox: other_channel.inbox, params: wb_params).perform
-      end.to change(Message, :count).by(1)
-
-      reaction_message = Message.find_by(source_id: 'wamid.REACTION_ID')
-      expect(reaction_message.content).to eq('👍')
-      expect(reaction_message.content_attributes['is_reaction']).to be true
+      end.not_to change(Message, :count)
     end
 
-    it 'skips reaction messages when the emoji is blank (reaction removal)' do
+    it 'ignore reaction type message, would not create contact if the reaction is the first event' do
       other_channel = create(:channel_whatsapp, phone_number: '+1987654', provider: 'whatsapp_cloud', sync_templates: false,
                                                 validate_provider_config: false)
       wb_params = {
@@ -308,9 +301,7 @@ RSpec.describe Webhooks::WhatsappEventsJob do
             value: {
               contacts: [{ profile: { name: 'Test Test' }, wa_id: '1111981136571' }],
               messages: [{
-                from: '1111981136571', id: 'wamid.REACTION_REMOVAL_ID',
-                reaction: { message_id: 'wamid.ORIGINAL_ID', emoji: '' },
-                timestamp: '1664799904', type: 'reaction'
+                from: '1111981136571', reaction: { emoji: '👍' }, timestamp: '1664799904', type: 'reaction'
               }],
               metadata: {
                 phone_number_id: other_channel.provider_config['phone_number_id'],
@@ -320,10 +311,9 @@ RSpec.describe Webhooks::WhatsappEventsJob do
           }]
         }]
       }.with_indifferent_access
-
       expect do
         Whatsapp::IncomingMessageWhatsappCloudService.new(inbox: other_channel.inbox, params: wb_params).perform
-      end.to not_change(Message, :count).and not_change(Contact, :count)
+      end.not_to change(Contact, :count)
     end
 
     it 'ignore request_welcome type message, would not create contact or conversation' do
@@ -353,6 +343,94 @@ RSpec.describe Webhooks::WhatsappEventsJob do
       expect do
         Whatsapp::IncomingMessageWhatsappCloudService.new(inbox: other_channel.inbox, params: wb_params).perform
       end.not_to change(Conversation, :count)
+    end
+
+    it 'finds channel using normalized Brazil phone number when display_phone_number is missing the 9 digit' do
+      brazil_channel = create(:channel_whatsapp, phone_number: '+5541999887766', provider: 'whatsapp_cloud',
+                                                 sync_templates: false, validate_provider_config: false)
+      wb_params = {
+        object: 'whatsapp_business_account',
+        entry: [{
+          changes: [{
+            value: {
+              metadata: {
+                phone_number_id: brazil_channel.provider_config['phone_number_id'],
+                display_phone_number: '554199887766'
+              }
+            }
+          }]
+        }]
+      }
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).with(inbox: brazil_channel.inbox, params: wb_params)
+      job.perform_now(wb_params)
+    end
+
+    it 'finds channel using normalized Argentina phone number when display_phone_number has extra 9 digit' do
+      argentina_channel = create(:channel_whatsapp, phone_number: '+541112345678', provider: 'whatsapp_cloud',
+                                                    sync_templates: false, validate_provider_config: false)
+      wb_params = {
+        object: 'whatsapp_business_account',
+        entry: [{
+          changes: [{
+            value: {
+              metadata: {
+                phone_number_id: argentina_channel.provider_config['phone_number_id'],
+                display_phone_number: '5491112345678'
+              }
+            }
+          }]
+        }]
+      }
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).with(inbox: argentina_channel.inbox, params: wb_params)
+      job.perform_now(wb_params)
+    end
+
+    it 'finds channel when display_phone_number contains formatting characters' do
+      formatted_channel = create(:channel_whatsapp, phone_number: '+14155552671', provider: 'whatsapp_cloud',
+                                                    sync_templates: false, validate_provider_config: false)
+      wb_params = {
+        object: 'whatsapp_business_account',
+        entry: [{
+          changes: [{
+            value: {
+              metadata: {
+                phone_number_id: formatted_channel.provider_config['phone_number_id'],
+                display_phone_number: '+1 415-555-2671'
+              }
+            }
+          }]
+        }]
+      }
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).with(inbox: formatted_channel.inbox, params: wb_params)
+      job.perform_now(wb_params)
+    end
+
+    it 'prefers the phone_number_id match when a raw display_phone_number collision exists' do
+      normalized_channel = create(:channel_whatsapp, phone_number: '+5541999887766', provider: 'whatsapp_cloud',
+                                                     sync_templates: false, validate_provider_config: false)
+      create(:channel_whatsapp, phone_number: '+554199887766', provider: 'whatsapp_cloud',
+                                sync_templates: false, validate_provider_config: false).tap do |raw_channel|
+        raw_channel.update!(provider_config: raw_channel.provider_config.merge('phone_number_id' => 'other-id'))
+      end
+      wb_params = {
+        object: 'whatsapp_business_account',
+        entry: [{
+          changes: [{
+            value: {
+              metadata: {
+                phone_number_id: normalized_channel.provider_config['phone_number_id'],
+                display_phone_number: '554199887766'
+              }
+            }
+          }]
+        }]
+      }
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).with(inbox: normalized_channel.inbox, params: wb_params)
+      job.perform_now(wb_params)
     end
 
     it 'will not enque Whatsapp::IncomingMessageWhatsappCloudService when invalid phone number id' do

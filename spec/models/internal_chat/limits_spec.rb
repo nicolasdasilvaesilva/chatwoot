@@ -10,8 +10,8 @@ RSpec.describe InternalChat::Limits do
   end
 
   describe '.polls_enabled?' do
-    it 'returns false in CE' do
-      expect(described_class.polls_enabled?).to be false
+    it 'returns true (Indica Fácil unlocks polls on Free)' do
+      expect(described_class.polls_enabled?).to be true
     end
   end
 
