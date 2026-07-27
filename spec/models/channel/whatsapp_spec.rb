@@ -505,6 +505,9 @@ RSpec.describe Channel::Whatsapp do
           stub_request(:post, "https://graph.facebook.com/v22.0/#{channel.provider_config['phone_number_id']}")
             .with(body: { webhook_configuration: { override_callback_uri: '' } }.to_json)
             .to_return(status: 200, body: '', headers: {})
+          # 4.16.2 added a deregister step to the teardown path, for embedded-signup numbers only.
+          stub_request(:post, "https://graph.facebook.com/v22.0/#{channel.provider_config['phone_number_id']}/deregister")
+            .to_return(status: 200, body: '', headers: {})
         end
 
         it 'does not invoke callback' do
@@ -776,6 +779,10 @@ RSpec.describe Channel::Whatsapp do
         .to_return(status: 200, body: { success: true }.to_json, headers: { 'Content-Type' => 'application/json' })
       stub_request(:post, %r{graph\.facebook\.com/v\d+\.\d+/\d+\z})
         .with(body: { webhook_configuration: { override_callback_uri: '' } }.to_json)
+        .to_return(status: 200, body: { success: true }.to_json, headers: { 'Content-Type' => 'application/json' })
+      # 4.16.2 added a deregister step to the teardown path, for embedded-signup numbers only.
+      # The POST stub above is anchored with \z, so it deliberately does not cover this one.
+      stub_request(:post, %r{graph\.facebook\.com/v\d+\.\d+/.*/deregister\z})
         .to_return(status: 200, body: { success: true }.to_json, headers: { 'Content-Type' => 'application/json' })
       webhook_setup_service = instance_double(Whatsapp::WebhookSetupService, perform: nil)
       allow(Whatsapp::WebhookSetupService).to receive(:new).and_return(webhook_setup_service)
