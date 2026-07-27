@@ -93,6 +93,13 @@ app.use(FloatingVue, {
       $extend: 'dropdown',
       $resetCss: true,
     },
+    // Use the `fixed` strategy so tooltips are positioned relative to the viewport.
+    // With the default `absolute` strategy, a hidden tooltip lingers at a stale offset
+    // and adds to the page's scroll height, letting the whole dashboard over-scroll.
+    // Fixed elements never affect scroll height, so this can't happen.
+    tooltip: {
+      strategy: 'fixed',
+    },
   },
 });
 app.use(hljsVuePlugin);
