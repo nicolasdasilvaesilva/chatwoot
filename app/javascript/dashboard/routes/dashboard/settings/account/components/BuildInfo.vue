@@ -5,7 +5,7 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { useI18n } from 'vue-i18n';
 
-import semver from 'semver';
+import { hasAnUpdateAvailable as isUpdateAvailable } from 'dashboard/components/app/versionCheckHelper';
 
 const { t } = useI18n();
 const { currentAccount } = useAccount();
@@ -16,13 +16,12 @@ const latestChatwootVersion = computed(() => {
 
 const globalConfig = useMapGetter('globalConfig/get');
 
-const hasAnUpdateAvailable = computed(() => {
-  if (!semver.valid(latestChatwootVersion.value)) {
-    return false;
-  }
-
-  return semver.lt(globalConfig.value.appVersion, latestChatwootVersion.value);
-});
+// Shares versionCheckHelper with UpdateBanner instead of repeating the
+// comparison: the inline copy here carried the same semver bug, so the notice
+// in account settings was as silent as the banner.
+const hasAnUpdateAvailable = computed(() =>
+  isUpdateAvailable(latestChatwootVersion.value, globalConfig.value.appVersion)
+);
 
 const gitSha = computed(() => {
   return globalConfig.value.gitSha.substring(0, 7);
