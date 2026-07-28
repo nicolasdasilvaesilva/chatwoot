@@ -123,6 +123,8 @@ Classificar cada item como:
 | `.../settings/inbox/channels/Whatsapp.vue` | provedores Baileys e Z-API |
 | `app/controllers/webhooks/whatsapp_controller.rb` | webhooks Baileys/Z-API |
 | `app/services/whatsapp/incoming_message_base_service.rb` | locking de duas camadas, reações |
+| `app/javascript/dashboard/components/app/versionCheckHelper.js` | comparação que entende o sufixo `-indica-facil.NN` |
+| `.../settings/account/components/BuildInfo.vue` | usa o helper acima, não a comparação do oficial |
 
 Antes de copiar **qualquer** arquivo, rode o diagnóstico:
 
@@ -171,6 +173,8 @@ Os seguintes arquivos/diretórios **nunca devem ser substituídos** pelo oficial
 | `config/app.yml` | Versão e configurações específicas |
 | `app/jobs/internal/check_new_versions_job.rb` | Notificação de versão via GitHub `nicolasdasilvaesilva` |
 | `app/javascript/dashboard/components/app/UpdateBanner.vue` | Links de atualização |
+| `app/javascript/dashboard/components/app/versionCheckHelper.js` | Comparação que entende o sufixo do fork (ver 5.6) |
+| `.../settings/account/components/BuildInfo.vue` | Consome o helper; a versão do oficial tem a comparação quebrada |
 | `.github/` | CI/CD e instruções próprias |
 | `.claude/` | Skills e configuração do agente |
 | `docker-compose.yaml` | Configuração Docker customizada |
@@ -203,6 +207,33 @@ Os seguintes arquivos/diretórios **nunca devem ser substituídos** pelo oficial
 #### 5.5 i18n
 - Combinar chaves de ambos os lados
 - Não inventar traduções pt_BR — só incorporar as que o oficial já tem
+
+#### 5.6 Comparação de versão — o aviso de atualização
+
+> **Esta seção existe por causa de um defeito descoberto em 2026-07-27, que estava no ar desde a primeira release.** O banner de nova versão **nunca funcionou**, da `.01` até a `.06`. Ninguém notou porque a falha é silenciosa: sem erro, sem log, sem banner.
+
+Nossas versões têm o formato `4.16.2-indica-facil.07`. O zero à esquerda no sufixo **invalida o semver** — a especificação proíbe zero à esquerda em identificador numérico de pré-lançamento. O helper do oficial faz `if (!semver.valid(latestVersion)) return false;`, então devolvia `false` para toda release nossa.
+
+Dois arquivos carregam essa comparação e **ambos são nossos agora**:
+
+| Arquivo | O que tem de nosso |
+|---|---|
+| `app/javascript/dashboard/components/app/versionCheckHelper.js` | compara a base com semver e o sufixo como número; nunca lança |
+| `.../settings/account/components/BuildInfo.vue` | usa o helper; o oficial tem uma cópia da comparação embutida |
+
+Regras ao aceitar o lado oficial nesses arquivos:
+
+- **Nunca** passar a versão inteira para `semver.valid` ou `semver.lt`. O `semver.lt` **lança exceção** com versão inválida — não devolve `false` —, e isso acontece dentro de um `computed` que alimenta um `v-if`. Trocaria uma falha silenciosa por erro de renderização no painel do admin.
+- Se o oficial reintroduzir a comparação embutida no `BuildInfo.vue`, restaurar o uso do helper compartilhado.
+- Validar depois do merge:
+
+```bash
+npx vitest run app/javascript/dashboard/components/app/specs/versionCheckHelper.spec.js
+```
+
+Os 9 specs cobrem ordenação numérica (`.10` > `.9`), zero à esquerda dos dois lados, versão upstream pura lida como sufixo zero, e a regressão que fixa a exceção.
+
+> O banner é renderizado pelo frontend da versão **instalada**. Uma correção aqui só passa a valer depois que a instância roda a versão que a contém — nunca retroage.
 
 ### Etapa 6 — Protocolo de conflitos
 

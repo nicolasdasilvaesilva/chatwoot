@@ -65,6 +65,7 @@ Sobrescrever com as cópias do backup:
 | `.gitattributes` | força LF em `*.sh` e `bin/*` |
 | `docker-compose.coolify.yaml` | env do Baileys, branding, imagem ghcr própria |
 | `CUSTOM_BRANDING.md` | documentação de branding |
+| `app/javascript/dashboard/components/app/versionCheckHelper.js` | nossa comparação de versão — a da fazer.ai não entende o sufixo `-indica-facil.NN` (ver Armadilhas) |
 
 E atualizar a versão em **`VERSION_CW`** e **`config/app.yml`** (têm de bater — o CI verifica).
 
@@ -112,6 +113,7 @@ ls app/models/internal_chat/ | wc -l                                            
 ls app/services/whatsapp/baileys_handlers/ | wc -l                                                        # 11
 ls app/services/whatsapp/zapi_handlers/ | wc -l                                                           # 6
 grep -rl 'fazer\.ai\|fazer-ai\|fazer_ai' --include='*.rb' --include='*.vue' --include='*.js' app/ config/ lib/ | wc -l  # 0
+npx vitest run app/javascript/dashboard/components/app/specs/versionCheckHelper.spec.js                    # 9 passando
 ```
 
 O workflow `ci-fork-features` faz isso automaticamente em ~13s — mas rodar local antes do push evita ida e volta.
@@ -156,3 +158,4 @@ Para as notas, use a skill `release-notes` (blocos bilíngues pt-BR + en para us
 - **Lixo na raiz**: `logs.zip`, `fix_ruby_files.py`, `action_log.txt` e afins ficam untracked. Não commitar.
 - **Permissão de execução**: arquivos copiados no Windows perdem o `+x`. O rubocop acusa (`Lint/ScriptPermission`). Corrigir com `git update-index --chmod=+x <arquivo>`.
 - **Exit code engana**: `robocopy` retorna 1/3 em sucesso; um `pnpm run build` inexistente retorna 0 com erro no stdout. Sempre ler a saída, não só o código.
+- **A comparação de versão do banner** (descoberto em 2026-07-27, quebrado desde a `.01`). O espelhamento traz o `versionCheckHelper.js` da fazer.ai, que faz `if (!semver.valid(latest)) return false`. Nossa versão `4.16.2-indica-facil.07` **não é semver válido** — zero à esquerda em identificador numérico de pré-lançamento é proibido pela especificação. Resultado: o banner de nova versão nunca aparece, sem erro nem log. Restaurar sempre a nossa versão do helper, e conferir que o `BuildInfo.vue` **usa o helper** em vez de repetir a comparação em linha (o upstream repete). Nunca passar a versão inteira para `semver.lt`: com versão inválida ele **lança exceção**, não devolve `false`, e isso quebra a renderização do painel.

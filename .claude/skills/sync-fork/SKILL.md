@@ -227,6 +227,21 @@ Pro adds `PROTECTED_SUBSCRIPTION_KEYS` constant + `protected_subscription_key_ch
 
 When upstream only adds `en.yml` keys and not `pt_BR.yml`, match upstream's scope — do not invent pt_BR translations as part of the merge. Those come in as community PRs or a separate translation pass.
 
+### Version comparison for the update banner
+
+`app/javascript/dashboard/components/app/versionCheckHelper.js` and
+`app/javascript/dashboard/routes/dashboard/settings/account/components/BuildInfo.vue`.
+
+Both sides own a version comparison, and upstream's cannot read our versions. Fork releases are shaped `4.16.2-indica-facil.07`, and semver forbids a leading zero in a numeric prerelease identifier — so `semver.valid()` returns null for every release we have ever cut. Upstream's helper starts with `if (!semver.valid(latestVersion)) return false;`, which silently disabled the update banner from `.01` through `.06`. Nothing logged, nothing threw; the banner simply never appeared. Found on 2026-07-27, fixed in `.07`.
+
+- **CE merge (chatwoot → indica-facil):** **KC** on both files. Ours compares the upstream base with semver and the suffix as a plain number.
+- Watch for upstream reintroducing the comparison **inline** in `BuildInfo.vue` — it used to duplicate the logic there instead of importing the helper. If the merge brings that copy back, restore the shared import; otherwise account settings goes silently blind again while the banner works.
+- Never pass a whole fork version to `semver.lt`. It **throws** on an unparseable version rather than returning false, and it runs inside a computed property feeding a `v-if` — that turns a silent failure into a render error for admins.
+
+Validate with `npx vitest run app/javascript/dashboard/components/app/specs/versionCheckHelper.spec.js` (9 examples: numeric suffix ordering where `.10` > `.9`, leading zeroes on either side, a plain upstream version read as suffix zero, and a regression pinning that an unparseable installed version cannot throw).
+
+> The banner is rendered by the frontend of the **installed** version, so a fix here never reaches instances running older builds — it only takes effect from the release that carries it.
+
 ### New features from both sides
 
 Controllers (`inboxes_controller`, `conversations_controller`), policies, routes, store modules, automation_rule action whitelist, spec describe-blocks — when both sides added net-new methods/endpoints/actions, the resolution is always **CO**. Keep both additions ordered sensibly.
