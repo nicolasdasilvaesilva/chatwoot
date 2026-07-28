@@ -93,6 +93,9 @@ yarn-debug.log*
 # TextEditors & AI Agents config files
 .vscode
 .claude/**/*.local.*
+# Skills internas: documentam a derivacao do fork, o processo de white-label e a
+# divisao Free/Pro. Vivem no repositorio privado indica-facil-docs.
+.claude/skills/
 .cursor
 .codex/
 CLAUDE.local.md
