@@ -11,6 +11,7 @@ import FloatingVue from 'floating-vue';
 import WootUiKit from 'dashboard/components';
 import App from 'dashboard/App.vue';
 import i18nMessages from 'dashboard/i18n';
+import applyBrand from 'dashboard/i18n/applyBrand';
 import createAxios from 'dashboard/helper/APIHelper';
 
 import commonHelpers, { isJSONValid } from 'dashboard/helper/commons';
@@ -36,7 +37,9 @@ import 'floating-vue/dist/style.css';
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
   locale: 'en',
-  messages: i18nMessages,
+  // Resolve the %BRAND% sentinel before vue-i18n compiles the messages, so the
+  // dashboard names the installation instead of naming Chatwoot.
+  messages: applyBrand(i18nMessages, window.globalConfig?.INSTALLATION_NAME),
 });
 
 sync(store, router);

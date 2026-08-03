@@ -68,6 +68,60 @@ def conta_arquivos(pasta):
     return len(os.listdir(alvo)) if os.path.isdir(alvo) else 0
 
 
+def marca_em_strings():
+    """Falha se 'Chatwoot' voltar a aparecer em texto que o usuario le.
+
+    Esta verificacao nasceu tarde: oito releases sairam com 36 strings da
+    interface nomeando o Chatwoot em vez da instalacao, e o audit passava verde
+    porque so procurava residuo de fazer.ai. O painel usa o sentinela %BRAND%
+    (resolvido no boot por i18n/applyBrand.js) e os locales do Rails usam
+    %{brand}. Um sync que copie o arquivo do upstream por cima traz o nome de
+    volta, sem quebrar teste nenhum -- dai o guard.
+    """
+    import json
+    import re
+
+    permitido = (
+        'latestChatwootVersion',   # nome de variavel, nao texto exibido
+        'Chatwoot app',            # o aplicativo do Slack chama-se assim de fato
+        'aplicativo Chatwoot',
+    )
+    achados = []
+
+    for locale in ('en', 'pt_BR'):
+        pasta = os.path.join(REPO, 'app/javascript/dashboard/i18n/locale', locale)
+        if not os.path.isdir(pasta):
+            continue
+        for nome in sorted(os.listdir(pasta)):
+            if not nome.endswith('.json'):
+                continue
+            caminho = os.path.join(pasta, nome)
+            try:
+                bruto = open(caminho, encoding='utf-8').read()
+            except OSError:
+                continue
+            for trecho in re.findall(r'"(?:[^"\\]|\\.)*Chatwoot(?:[^"\\]|\\.)*"', bruto):
+                if any(ok in trecho for ok in permitido):
+                    continue
+                achados.append(f'{locale}/{nome}: {trecho[:70]}')
+
+    for arquivo in ('config/locales/en.yml', 'config/locales/pt_BR.yml'):
+        caminho = os.path.join(REPO, arquivo)
+        if not os.path.exists(caminho):
+            continue
+        for linha in open(caminho, encoding='utf-8'):
+            if 'Chatwoot' in linha and re.search(r'(description|short_description|name):', linha):
+                achados.append(f'{arquivo}: {linha.strip()[:70]}')
+
+    if achados:
+        print(f"  FALHA {len(achados)} string(s) de interface citam Chatwoot:")
+        for a in achados[:15]:
+            print(f"        {a}")
+        falhas.append('marca nas strings')
+    else:
+        print("  ok  nenhuma string de interface cita Chatwoot")
+
+
 def check(rotulo, valor, minimo):
     ok = valor >= minimo
     print(f"  {'ok ' if ok else 'FALHA'} {rotulo}: {valor} (minimo {minimo})")
@@ -149,6 +203,8 @@ def main():
         falhas.append('residuo fazer.ai')
     else:
         print("  ok  nenhum residuo de fazer.ai")
+
+    marca_em_strings()
 
     try:
         v = open(os.path.join(REPO, 'VERSION_CW'), encoding='utf-8').read().strip()

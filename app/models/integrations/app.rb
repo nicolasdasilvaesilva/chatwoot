@@ -11,15 +11,15 @@ class Integrations::App
   end
 
   def name
-    I18n.t("integration_apps.#{params[:i18n_key]}.name")
+    I18n.t("integration_apps.#{params[:i18n_key]}.name", brand: brand_name)
   end
 
   def description
-    I18n.t("integration_apps.#{params[:i18n_key]}.description")
+    I18n.t("integration_apps.#{params[:i18n_key]}.description", brand: brand_name)
   end
 
   def short_description
-    I18n.t("integration_apps.#{params[:i18n_key]}.short_description")
+    I18n.t("integration_apps.#{params[:i18n_key]}.short_description", brand: brand_name)
   end
 
   def logo
@@ -122,6 +122,16 @@ class Integrations::App
   end
 
   private
+
+  # Integration copy is the one place the Rails side still named the product in
+  # text the dashboard renders. The locale strings interpolate %{brand} so a
+  # white-labelled instance describes itself, falling back to the upstream name
+  # when no installation name is configured.
+  def brand_name
+    # Memoised: the integrations index renders name, description and
+    # short_description for every app on a single request.
+    @brand_name ||= GlobalConfigService.load('INSTALLATION_NAME', 'Chatwoot')
+  end
 
   def shopify_enabled?(account)
     account.feature_enabled?('shopify_integration') && GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?
