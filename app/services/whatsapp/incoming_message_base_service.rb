@@ -312,17 +312,24 @@ class Whatsapp::IncomingMessageBaseService # rubocop:disable Metrics/ClassLength
 
   # NOTE: upstream 4.16.1 widened this to `@contact.conversations.where(inbox_id:)`
   # for WhatsApp coexistence (one contact, multiple source_ids: phone + BSUID).
-  # We do NOT adopt it: the fork's Baileys/Zapi flows and reaction anchoring rely
-  # on contact_inbox scoping, and widening it broke the specs covering
-  # conversation reuse, reply anchoring and reaction senders. Revisit only with
-  # those specs updated deliberately.
+  # We rejected it then, because widening it broke the specs covering conversation
+  # reuse, reply anchoring and reaction senders, and left this note asking for a
+  # revisit only once those specs were updated deliberately.
+  #
+  # Adopted in 4.16.2-indica-facil.08, from fazer-ai .91, which carries the fix
+  # together with the fixture change it requires. The trap is in the conversation
+  # factory: given `contact_inbox:` without `contact:`, it creates a *different*
+  # contact for the conversation, so a reuse lookup scoped to the contact finds
+  # nothing. Specs that exercise reuse must pass both.
   def conversation_by_inbox_config
+    # Scope reuse to the contact across all its contact_inboxes in this inbox: WhatsApp coexistence
+    # gives one contact multiple source_ids (phone + BSUID), so reopen must not be limited to a single contact_inbox.
+    conversations = @contact.conversations.where(inbox_id: @inbox.id)
     # if lock to single conversation is disabled, we will create a new conversation if previous conversation is resolved
     if @inbox.lock_to_single_conversation
-      @inbox.conversations.where(contact_id: @contact_inbox.contact_id).last
+      conversations.last
     else
-      @contact_inbox.conversations
-                    .where.not(status: :resolved).last
+      conversations.where.not(status: :resolved).last
     end
   end
 
