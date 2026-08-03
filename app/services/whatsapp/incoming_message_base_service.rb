@@ -316,11 +316,11 @@ class Whatsapp::IncomingMessageBaseService # rubocop:disable Metrics/ClassLength
   # reuse, reply anchoring and reaction senders, and left this note asking for a
   # revisit only once those specs were updated deliberately.
   #
-  # Adopted in 4.16.2-indica-facil.08, from fazer-ai .91, which carries the fix
-  # together with the fixture change it requires. The trap is in the conversation
-  # factory: given `contact_inbox:` without `contact:`, it creates a *different*
-  # contact for the conversation, so a reuse lookup scoped to the contact finds
-  # nothing. Specs that exercise reuse must pass both.
+  # Adopted in 4.16.2-indica-facil.08, once the fixture change it requires was
+  # understood. The trap is in the conversation factory: given `contact_inbox:`
+  # without `contact:`, it builds a *different* contact for the conversation, so
+  # a reuse lookup scoped to the contact finds nothing. Specs that exercise reuse
+  # must pass both.
   def conversation_by_inbox_config
     # Scope reuse to the contact across all its contact_inboxes in this inbox: WhatsApp coexistence
     # gives one contact multiple source_ids (phone + BSUID), so reopen must not be limited to a single contact_inbox.
