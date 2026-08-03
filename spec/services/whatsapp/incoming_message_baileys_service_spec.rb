@@ -622,7 +622,7 @@ describe Whatsapp::IncomingMessageBaileysService do
           it 'creates a message on an existing conversation' do
             contact = create(:contact, account: inbox.account, name: 'John Doe')
             contact_inbox = create(:contact_inbox, inbox: inbox, contact: contact, source_id: '12345678')
-            existing_conversation = create(:conversation, inbox: inbox, contact_inbox: contact_inbox)
+            existing_conversation = create(:conversation, inbox: inbox, contact_inbox: contact_inbox, contact: contact_inbox.contact)
 
             described_class.new(inbox: inbox, params: params).perform
 
@@ -743,7 +743,7 @@ describe Whatsapp::IncomingMessageBaileysService do
         let!(:message) do
           contact = create(:contact, account: inbox.account, name: '5511912345678')
           contact_inbox = create(:contact_inbox, inbox: inbox, contact: contact, source_id: '12345678')
-          conversation = create(:conversation, inbox: inbox, contact_inbox: contact_inbox)
+          conversation = create(:conversation, inbox: inbox, contact_inbox: contact_inbox, contact: contact_inbox.contact)
           create(:message, inbox: inbox, conversation: conversation, source_id: 'msg_123')
         end
 
@@ -1288,7 +1288,7 @@ describe Whatsapp::IncomingMessageBaileysService do
         agent = create(:user, account: inbox.account, role: :agent)
         contact = create(:contact, account: inbox.account)
         contact_inbox = create(:contact_inbox, inbox: inbox, contact: contact)
-        create(:conversation, inbox: inbox, contact_inbox: contact_inbox, assignee_id: agent.id)
+        create(:conversation, inbox: inbox, contact_inbox: contact_inbox, assignee_id: agent.id, contact: contact_inbox.contact)
       end
       let!(:message) { create(:message, inbox: inbox, conversation: conversation, source_id: 'msg_123', status: 'sent') }
       let(:update_payload) { { key: { id: 'msg_123' }, update: { status: 3 } } }
@@ -1411,7 +1411,7 @@ describe Whatsapp::IncomingMessageBaileysService do
         agent = create(:user, account: inbox.account, role: :agent)
         contact = create(:contact, account: inbox.account)
         contact_inbox = create(:contact_inbox, inbox: inbox, contact: contact)
-        create(:conversation, inbox: inbox, contact_inbox: contact_inbox, assignee_id: agent.id)
+        create(:conversation, inbox: inbox, contact_inbox: contact_inbox, assignee_id: agent.id, contact: contact_inbox.contact)
       end
       let!(:message) { create(:message, inbox: inbox, conversation: conversation, source_id: '123ABCDE1234567', status: 'sent') }
       let(:receipt_payload) do
