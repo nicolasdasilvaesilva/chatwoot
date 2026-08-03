@@ -1,6 +1,7 @@
 import './design-system/histoire.scss';
 import { defineSetupVue3 } from '@histoire/plugin-vue';
 import dashboardI18n from 'dashboard/i18n';
+import applyBrand from 'dashboard/i18n/applyBrand';
 import widgetI18n from 'widget/i18n';
 import { createI18n } from 'vue-i18n';
 import { vResizeObserver } from '@vueuse/components';
@@ -30,8 +31,10 @@ function mergeMessages(...sources) {
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
   locale: 'en',
+  // The component workshop has no installation to read from, so the sentinel
+  // falls back to the upstream name instead of showing itself.
   messages: mergeMessages(
-    structuredClone(dashboardI18n),
+    applyBrand(structuredClone(dashboardI18n)),
     structuredClone(widgetI18n)
   ),
 });

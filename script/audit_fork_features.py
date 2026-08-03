@@ -121,6 +121,47 @@ def marca_em_strings():
     else:
         print("  ok  nenhuma string de interface cita Chatwoot")
 
+    sentinela_resolvido()
+
+
+def sentinela_resolvido():
+    """Falha se algum app que usa as mensagens do dashboard nao resolver %BRAND%.
+
+    Existe por um defeito real: a substituicao entrou so no entrypoint do
+    dashboard, e a tela de login e' outra aplicacao Vue que importa as mesmas
+    mensagens. O resultado foi "Entrar no %BRAND%" em producao. Nenhum teste
+    pegou, porque o sentinela e' texto valido.
+    """
+    faltando = []
+    candidatos = []
+
+    base = os.path.join(REPO, 'app/javascript')
+    for pasta, _, arquivos in os.walk(base):
+        if 'node_modules' in pasta.split(os.sep):
+            continue
+        for nome in arquivos:
+            if not nome.endswith(('.js', '.ts')):
+                continue
+            caminho = os.path.join(pasta, nome)
+            try:
+                conteudo = open(caminho, encoding='utf-8').read()
+            except OSError:
+                continue
+            # quem importa as mensagens do dashboard tem de aplicar a marca
+            if "from 'dashboard/i18n'" not in conteudo:
+                continue
+            candidatos.append(caminho)
+            if 'applyBrand' not in conteudo:
+                faltando.append(os.path.relpath(caminho, REPO))
+
+    if faltando:
+        print(f"  FALHA {len(faltando)} app(s) usam as mensagens sem resolver %BRAND%:")
+        for p in faltando:
+            print(f"        {p}")
+        falhas.append('sentinela nao resolvido')
+    else:
+        print(f"  ok  os {len(candidatos)} apps que usam as mensagens resolvem %BRAND%")
+
 
 def check(rotulo, valor, minimo):
     ok = valor >= minimo

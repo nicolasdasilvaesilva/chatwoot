@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { createI18n } from 'vue-i18n';
 
 import i18nMessages from 'dashboard/i18n';
+import applyBrand from 'dashboard/i18n/applyBrand';
 import * as Sentry from '@sentry/vue';
 import {
   initializeAnalyticsEvents,
@@ -20,7 +21,10 @@ import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
   locale: 'en',
-  messages: i18nMessages,
+  // Login and signup live in this app but share the dashboard's messages, so the
+  // %BRAND% sentinel has to be resolved here too — otherwise the sign-in heading
+  // renders the sentinel itself.
+  messages: applyBrand(i18nMessages, window.globalConfig?.INSTALLATION_NAME),
 });
 
 const app = createApp(App);
