@@ -9,11 +9,20 @@ RSpec.describe Rake::Task do
   describe 'branding:update' do
     subject(:task) { described_class['branding:update'] }
 
-    let(:names) { %w[INSTALLATION_NAME BRAND_NAME BRAND_URL WIDGET_BRAND_URL DISPLAY_MANIFEST] }
+    # Every one of the ten, not just the five asserted on below: the task walks
+    # the whole list with find_by!, so a missing row raises on a name this test
+    # never looks at. A seeded database hides that — which is exactly how this
+    # passed on a dev box and failed in CI.
+    let(:managed_names) do
+      %w[
+        INSTALLATION_NAME LOGO_THUMBNAIL LOGO LOGO_DARK BRAND_URL
+        WIDGET_BRAND_URL BRAND_NAME TERMS_URL PRIVACY_URL DISPLAY_MANIFEST
+      ]
+    end
 
     before do
       task.reenable
-      names.each { |name| InstallationConfig.find_or_create_by!(name: name) { |config| config.value = 'placeholder' } }
+      managed_names.each { |name| InstallationConfig.find_or_create_by!(name: name) { |config| config.value = 'placeholder' } }
     end
 
     def config_value(name)
