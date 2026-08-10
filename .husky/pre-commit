@@ -5,7 +5,22 @@
 npx --no-install lint-staged
 
 # lint only staged ruby files
-git diff --name-only --cached | xargs ls -1 2>/dev/null | grep '\.rb$' | xargs bundle exec rubocop --force-exclusion
+# `|| true`: husky runs this with `sh -e`, and grep exits 1 when it matches
+# nothing — which is most commits. Without it the script dies right here,
+# before the check below ever runs.
+staged_ruby=$(git diff --name-only --cached | xargs ls -1 2>/dev/null | grep '\.rb$' || true)
+
+if [ -n "$staged_ruby" ]; then
+  if command -v bundle >/dev/null 2>&1; then
+    echo "$staged_ruby" | xargs bundle exec rubocop --force-exclusion
+  else
+    # Ruby runs on the dev server here, not on every checkout. Refusing the
+    # commit would make Ruby unwritable from those machines; pretending the
+    # files were linted would be worse. Say so, by name, and let it through.
+    echo "⚠  rubocop skipped — no Ruby on this machine. Lint these on the dev server:"
+    echo "$staged_ruby" | sed 's/^/     /'
+  fi
+fi
 
 # stage rubocop changes to files
 # git diff --name-only --cached | xargs git add
