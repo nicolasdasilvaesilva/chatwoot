@@ -36,8 +36,8 @@ RSpec.describe Rake::Task do
 
       expect(config_value('INSTALLATION_NAME')).to eq('IndicaFácil.AI')
       expect(config_value('BRAND_NAME')).to eq('IndicaFácil.AI')
-      expect(config_value('BRAND_URL')).to eq('https://indicafacil.app')
-      expect(config_value('WIDGET_BRAND_URL')).to eq('https://indicafacil.app')
+      expect(config_value('BRAND_URL')).to eq('https://indicafacil.ai')
+      expect(config_value('WIDGET_BRAND_URL')).to eq('https://indicafacil.ai')
     end
 
     it 'lets an instance override the brand through the environment' do
@@ -59,7 +59,7 @@ RSpec.describe Rake::Task do
       end
 
       expect(config_value('BRAND_NAME')).to eq('IndicaFácil.AI')
-      expect(config_value('BRAND_URL')).to eq('https://indicafacil.app')
+      expect(config_value('BRAND_URL')).to eq('https://indicafacil.ai')
     end
 
     # The same emptiness on a boolean is not merely blank: "" is not "true", so

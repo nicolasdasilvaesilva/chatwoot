@@ -21,9 +21,9 @@ namespace :branding do
       # The logo that would be used on the dashboard, login page etc. for dark mode
       'LOGO_DARK' => '/brand-assets/logo_dark.svg',
       # The URL that would be used in emails under the section “Powered By”
-      'BRAND_URL' => 'https://indicafacil.app',
+      'BRAND_URL' => 'https://indicafacil.ai',
       # The URL that would be used in the widget under the section “Powered By”
-      'WIDGET_BRAND_URL' => 'https://indicafacil.app',
+      'WIDGET_BRAND_URL' => 'https://indicafacil.ai',
       # The name that would be used in emails and the widget
       'BRAND_NAME' => 'IndicaFácil.AI',
       # The terms of service URL displayed in Signup Page
