@@ -29,6 +29,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # The `enterprise/` directory carries the Chatwoot Enterprise License,
+      # which allows use in production only with a valid Enterprise
+      # subscription and forbids selling. We have never held one and do not use
+      # anything it provides: no premium feature is enabled on any account, and
+      # `pricing_plan` is community everywhere. Shipping it anyway put licensed
+      # third-party code on our servers and on customers' — for nothing.
+      #
+      # This is what upstream itself does to publish the FOSS image
+      # (publish_foss_docker.yml), and what ci-spec.yml here has always done
+      # before running the suite: our specs pass without it.
+      #
+      # It removes the enterprise-gated endpoints (Twilio voice, WhatsApp
+      # calling, conference, reporting_events, the Chatwoot Cloud billing
+      # namespace) and stops the audit trail from being written. All of it
+      # unused here.
+      - name: Strip enterprise code
+        run: |
+          rm -rf enterprise
+          rm -rf spec/enterprise
+
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
