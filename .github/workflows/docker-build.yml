@@ -72,13 +72,32 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Create manifest list and push
+      # `:latest` moves on every build, so it is not something a deployment can
+      # roll back to. `:sha-<commit>` never moves: pinning it makes what is
+      # running a fact anyone can read months later, and going back to a known
+      # good build becomes re-pinning a tag instead of rebuilding from an old
+      # commit. The Pro has carried this since day one; the Free did not, and
+      # the gap only shows up on the day something has to be undone.
+      - name: Create manifest lists and push
         run: |
+          SHA_TAG="sha-$(echo '${{ github.sha }}' | cut -c1-10)"
+          echo "Immutable tag for this build: $SHA_TAG"
+
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$SHA_TAG \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-linux-amd64 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-linux-arm64
 
+          echo "SHA_TAG=$SHA_TAG" >> "$GITHUB_ENV"
+
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}
+
+      - name: Deployment tag
+        run: |
+          echo "### Pin a deployment to this build" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
