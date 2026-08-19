@@ -145,9 +145,12 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
 
   def conversation_created(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    # Built once and shared: `push_event_data` is several queries deep, and the
+    # contact's copy is a subset of the agents', never a fresher read.
+    payload = conversation.push_event_data
 
-    broadcast(account, tokens, CONVERSATION_CREATED, conversation.push_event_data)
+    broadcast(account, user_tokens(account, conversation.inbox.members), CONVERSATION_CREATED, payload)
+    broadcast_to_contact(account, conversation, CONVERSATION_CREATED, payload)
   end
 
   def conversation_read(event)
@@ -159,19 +162,21 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
 
   def conversation_status_changed(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    payload = conversation.push_event_data
 
-    broadcast(account, tokens, CONVERSATION_STATUS_CHANGED, conversation.push_event_data)
+    broadcast(account, user_tokens(account, conversation.inbox.members), CONVERSATION_STATUS_CHANGED, payload)
+    broadcast_to_contact(account, conversation, CONVERSATION_STATUS_CHANGED, payload)
   end
 
   def conversation_updated(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
 
     payload = conversation.push_event_data
     metadata = event.data[:broadcast_metadata]
     payload = payload.merge(event_metadata: metadata) if metadata.present?
-    broadcast(account, tokens, CONVERSATION_UPDATED, payload)
+
+    broadcast(account, user_tokens(account, conversation.inbox.members), CONVERSATION_UPDATED, payload)
+    broadcast_to_contact(account, conversation, CONVERSATION_UPDATED, payload)
   end
 
   def conversation_unread_count_changed(event)
@@ -193,9 +198,9 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
       account,
       tokens,
       CONVERSATION_TYPING_ON,
-      conversation: conversation.push_event_data,
-      user: user.push_event_data,
-      is_private: event.data[:is_private] || false
+      { conversation: typing_conversation_data(conversation),
+        user: user.push_event_data,
+        is_private: event.data[:is_private] || false }
     )
   end
 
@@ -209,9 +214,9 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
       account,
       tokens,
       CONVERSATION_RECORDING,
-      conversation: conversation.push_event_data,
-      user: user.push_event_data,
-      is_private: event.data[:is_private] || false
+      { conversation: typing_conversation_data(conversation),
+        user: user.push_event_data,
+        is_private: event.data[:is_private] || false }
     )
   end
 
@@ -225,9 +230,9 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
       account,
       tokens,
       CONVERSATION_TYPING_OFF,
-      conversation: conversation.push_event_data,
-      user: user.push_event_data,
-      is_private: event.data[:is_private] || false
+      { conversation: typing_conversation_data(conversation),
+        user: user.push_event_data,
+        is_private: event.data[:is_private] || false }
     )
   end
 
@@ -300,6 +305,31 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
     "account_#{account.id}"
   end
 
+  # The contact subscribes to the same conversation events as the agents, but
+  # `push_event_data` is an agent payload. It gets its own broadcast built from
+  # the contact allowlist instead of riding along on the agents' hash.
+  # `payload` is passed in rather than re-derived so per-event extras the caller
+  # merged in (eg. `event_metadata`) survive the narrowing.
+  # ActionCableBroadcastJob preserves the shape it is handed; without that, the
+  # refresh would rebuild the full agent payload and undo this.
+  def broadcast_to_contact(account, conversation, event_name, payload)
+    # `performer` is skipped rather than allowlisted: it is merged in below,
+    # after the narrowing, and carries the acting agent's name and availability
+    # status. The widget never reads it. Typing events keep it — they already
+    # send `user` on purpose so the widget can render "agent is typing".
+    broadcast(account, contact_inbox_tokens(conversation.contact_inbox), event_name,
+              Conversations::EventDataPresenter.contact_slice(payload), include_performer: false)
+  end
+
+  # Typing events reach agents and the contact in a single payload, and no
+  # subscriber reads more than the conversation id here — the dashboard handlers
+  # key their timers off `conversation.id` and nothing else. So this ships the
+  # contact-sized payload to everyone rather than doubling the jobs on a
+  # per-keystroke path.
+  def typing_conversation_data(conversation)
+    conversation.contact_push_event_data
+  end
+
   def typing_event_listener_tokens(account, conversation, user)
     current_user_token = if user.is_a?(Contact)
                            conversation.contact_inbox.pubsub_token
@@ -352,13 +382,13 @@ class ActionCableListener < BaseListener # rubocop:disable Metrics/ClassLength
                          clean, clean])
   end
 
-  def broadcast(account, tokens, event_name, data)
+  def broadcast(account, tokens, event_name, data, include_performer: true)
     return if tokens.blank?
 
     payload = data.merge(account_id: account.id)
     # So the frondend knows who performed the action.
     # Useful in cases like conversation assignment for generating a notification with assigner name.
-    payload[:performer] = Current.user&.push_event_data if Current.user.present?
+    payload[:performer] = Current.user&.push_event_data if include_performer && Current.user.present?
 
     ::ActionCableBroadcastJob.perform_later(tokens.uniq, event_name, payload)
   end
