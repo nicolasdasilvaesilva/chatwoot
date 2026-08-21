@@ -91,17 +91,17 @@ Automate this with your worktree tool's create hook (e.g. worktrunk's `pre-start
 
 This repo is a fork of `chatwoot/chatwoot`. Remotes and their roles:
 
-- **origin** → `nicolasdasilvaesilva/chatwoot` (our CE fork). Feature/fix PRs from `main` target this repo.
-- **chatwoot-pro** → `nicolasdasilvaesilva/chatwoot-pro` (Pro fork). `chatwoot-pro-main` is merged directly (no PR) and carries the `vX.Y.Z-indica-facil-pro.N` tags/releases.
+- **origin** → `indicafacil-ai/chatwoot` (our CE fork). Feature/fix PRs from `main` target this repo.
+- **chatwoot-pro** → `indicafacil-ai/chatwoot-pro` (Pro fork). `chatwoot-pro-main` is merged directly (no PR) and carries the `vX.Y.Z-indica-facil-pro.N` tags/releases.
 - **upstream** → `chatwoot/chatwoot` (Chatwoot OSS). Read-only / sync only (merge `develop` via the `sync-fork` skill). **Never open a PR against upstream.**
 
 ⚠️ **`gh` fork gotcha:** because `origin` is a fork of `chatwoot/chatwoot`, `gh` resolves the PR base repo to the **parent (upstream)** when no default is set — so `gh pr create` silently opens the PR on `chatwoot/chatwoot`. Pin the base repo once per clone:
 
 ```sh
-gh repo set-default nicolasdasilvaesilva/chatwoot   # writes remote.origin.gh-resolved=base
+gh repo set-default indicafacil-ai/chatwoot   # writes remote.origin.gh-resolved=base
 ```
 
-When unsure, be explicit: `gh pr create --repo nicolasdasilvaesilva/chatwoot` (for Pro PRs, `--repo nicolasdasilvaesilva/chatwoot-pro`).
+When unsure, be explicit: `gh pr create --repo indicafacil-ai/chatwoot` (for Pro PRs, `--repo indicafacil-ai/chatwoot-pro`).
 
 ### Merge strategy
 
@@ -113,7 +113,7 @@ When unsure, be explicit: `gh pr create --repo nicolasdasilvaesilva/chatwoot` (f
 
 ### Pro repo gotchas
 
-- **Pro's living trunk is `chatwoot-pro-main`.** The `main` branch in `nicolasdasilvaesilva/chatwoot-pro` is a stale ancestor kept only as the repo's nominal GitHub default. A workflow copied over from CE with `push: branches: [main]` therefore never fires there — swap the filter for `chatwoot-pro-main`.
+- **Pro's living trunk is `chatwoot-pro-main`.** The `main` branch in `indicafacil-ai/chatwoot-pro` is a stale ancestor kept only as the repo's nominal GitHub default. A workflow copied over from CE with `push: branches: [main]` therefore never fires there — swap the filter for `chatwoot-pro-main`.
 - **Pro's enterprise specs have no CI.** `run_foss_spec.yml` runs `rm -rf enterprise spec/enterprise` before the suite, so nothing in `spec/enterprise` is ever executed by a workflow. Run it locally before merging anything that touches `enterprise/`.
 
 ## PR Description Format

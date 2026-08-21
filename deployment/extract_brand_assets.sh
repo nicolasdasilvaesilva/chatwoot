@@ -3,7 +3,7 @@
 set -e
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <url to zip file with favicons>. See https://github.com/nicolasdasilvaesilva/chatwoot/blob/main/CUSTOM_BRANDING.md for more info."
+  echo "Usage: $0 <url to zip file with favicons>. See https://github.com/indicafacil-ai/chatwoot/blob/main/CUSTOM_BRANDING.md for more info."
   exit 1
 fi
 
