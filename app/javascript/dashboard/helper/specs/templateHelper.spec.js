@@ -180,12 +180,20 @@ describe('templateHelper', () => {
       ]);
     });
 
+    // 4.17.0 moved the parameter shape into @chatwoot/utils, which always emits a
+    // header entry for a media header, even with nothing filled in. It is inert:
+    // the backend drops a media header whose media_url is blank (see
+    // build_media_header_params), so an empty one never reaches WhatsApp. Asserted
+    // field by field rather than loosened to `result.body`, so a header that starts
+    // carrying a URL on its own would still fail here.
     it('should handle templates with no variables', () => {
       const emptyTemplate = templates.find(
         t => t.name === 'no_variable_template'
       );
-      const result = buildTemplateParameters(emptyTemplate, false);
-      expect(result).toEqual({});
+      const result = buildTemplateParameters(emptyTemplate);
+      expect(result.body).toBeUndefined();
+      expect(result.buttons).toBeUndefined();
+      expect(result.header?.media_url).toBe('');
     });
 
     it('should build parameters for templates with multiple component types', () => {
