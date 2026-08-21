@@ -24,8 +24,10 @@ module Events::Types
   # FIXME: deprecate the opened and resolved events in future in favor of status changed event.
   CONVERSATION_OPENED = 'conversation.opened'
   CONVERSATION_RESOLVED = 'conversation.resolved'
-  CONVERSATION_CAPTAIN_INFERENCE_RESOLVED = 'conversation.captain_inference_resolved'
-  CONVERSATION_CAPTAIN_INFERENCE_HANDOFF = 'conversation.captain_inference_handoff'
+  CAPTAIN_CONVERSATION_HANDED_OFF = 'captain.conversation.handed_off'
+  CAPTAIN_CONVERSATION_RESOLVED = 'captain.conversation.resolved'
+  CAPTAIN_RESPONSE_COMPLETED = 'captain.response.completed'
+  CAPTAIN_RESPONSE_FAILED = 'captain.response.failed'
 
   CONVERSATION_STATUS_CHANGED = 'conversation.status_changed'
   CONVERSATION_CONTACT_CHANGED = 'conversation.contact_changed'
@@ -37,6 +39,8 @@ module Events::Types
   CONVERSATION_TYPING_OFF = 'conversation.typing_off'
   CONVERSATION_MENTIONED = 'conversation.mentioned'
   CONVERSATION_UNREAD = 'conversation.unread'
+  CONVERSATION_PINNED = 'conversation.pinned'
+  CONVERSATION_UNPINNED = 'conversation.unpinned'
 
   # message events
   MESSAGE_CREATED = 'message.created'

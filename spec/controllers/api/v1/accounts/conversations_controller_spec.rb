@@ -568,6 +568,40 @@ RSpec.describe 'Conversations API', type: :request do
         end
       end
     end
+
+    context 'when it is an authenticated bot' do
+      let(:bot) { create(:agent_bot, account: account) }
+      let(:other_account) { create(:account) }
+      let(:other_inbox) { create(:inbox, account: other_account) }
+      let(:other_contact) { create(:contact, account: other_account) }
+      let!(:other_contact_inbox) do
+        create(:contact_inbox, contact: other_contact, inbox: other_inbox)
+      end
+
+      before { allow(Rails.configuration.dispatcher).to receive(:dispatch) }
+
+      it 'does not create a conversation in another account from its source_id' do
+        expect do
+          post "/api/v1/accounts/#{account.id}/conversations",
+               headers: { api_access_token: bot.access_token.token },
+               params: { source_id: other_contact_inbox.source_id, message: { content: 'hi' } },
+               as: :json
+        end.not_to change(other_account.conversations, :count)
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'creates a conversation for a source_id in its own account' do
+        expect do
+          post "/api/v1/accounts/#{account.id}/conversations",
+               headers: { api_access_token: bot.access_token.token },
+               params: { source_id: contact_inbox.source_id },
+               as: :json
+        end.to change(account.conversations, :count).by(1)
+
+        expect(response).to have_http_status(:success)
+      end
+    end
   end
 
   describe 'POST /api/v1/accounts/{account.id}/conversations/:id/toggle_status' do
@@ -663,6 +697,49 @@ RSpec.describe 'Conversations API', type: :request do
         expect(response).to have_http_status(:success)
         expect(conversation.reload.status).to eq('snoozed')
         expect(conversation.reload.snoozed_until.to_i).to eq(snoozed_until)
+      end
+
+      # Reopening self-assigns via `handle_human_open`, which is a second claim
+      # path that bypasses Conversations::AssignmentService entirely.
+      it 'answers 409 when reopening a conversation assigned to another agent' do
+        owner = create(:user, account: account, role: :agent)
+        create(:inbox_member, inbox: conversation.inbox, user: owner)
+        conversation.update!(status: 'resolved', assignee: owner)
+        conversation.inbox.update!(prevent_assignment_takeover: true)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'open' },
+             as: :json
+
+        expect(response).to have_http_status(:conflict)
+        expect(response.parsed_body['agent_name']).to eq(owner.available_name)
+        expect(conversation.reload.assignee).to eq(owner)
+        # The status change and the self-assignment are separate saves; a refused
+        # request must not leave the conversation reopened behind the 409.
+        expect(conversation.reload.status).to eq('resolved')
+      end
+
+      # Regression: reopening self-assigns the agent, and that used to be a
+      # second save. `previous_changes` only carries the last save, so the
+      # status callbacks (reopen activity message, automations, reporting) went
+      # silent. Both changes have to land in one save.
+      it 'still reports the status change when reopening self-assigns the agent' do
+        conversation.update!(status: 'resolved', assignee: nil)
+        # Stubbed after the setup, which is itself a status change.
+        allow(Rails.configuration.dispatcher).to receive(:dispatch)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'open' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.assignee).to eq(agent)
+        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+          .with(Events::Types::CONVERSATION_STATUS_CHANGED, kind_of(Time), hash_including(conversation: conversation))
+        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+          .with(Events::Types::CONVERSATION_OPENED, kind_of(Time), hash_including(conversation: conversation))
       end
     end
 
@@ -1186,6 +1263,213 @@ RSpec.describe 'Conversations API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:id/pin' do
+    let(:conversation) { create(:conversation, account: account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when the agent has no access to the conversation' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an agent bot' do
+      let(:agent_bot) { create(:agent_bot, account: account) }
+
+      before { create(:agent_bot_inbox, inbox: conversation.inbox, agent_bot: agent_bot) }
+
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+             headers: { api_access_token: agent_bot.access_token.token },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      before { create(:inbox_member, user: agent, inbox: conversation.inbox) }
+
+      it 'pins the conversation for the current agent' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['conversation_id']).to eq(conversation.display_id)
+        expect(response.parsed_body['pinned_at']).to be_present
+        expect(conversation.conversation_pins.pluck(:user_id)).to eq([agent.id])
+      end
+
+      it 'is idempotent' do
+        2.times do
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+               headers: agent.create_new_auth_token,
+               as: :json
+        end
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.conversation_pins.count).to eq(1)
+      end
+
+      it 'returns unprocessable entity for a resolved conversation' do
+        conversation.update!(status: :resolved)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['message']).to eq('A resolved conversation cannot be pinned.')
+      end
+
+      it 'returns unprocessable entity when the limit is reached' do
+        pinned_inbox = create(:inbox, account: account, enable_auto_assignment: false)
+        create(:inbox_member, user: agent, inbox: pinned_inbox)
+        ConversationPin::MAX_PER_USER.times do
+          pinned = create(:conversation, account: account, inbox: pinned_inbox)
+          create(:conversation_pin, conversation: pinned, user: agent, account: account)
+        end
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pin",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['message']).to eq("You can pin up to #{ConversationPin::MAX_PER_USER} conversations.")
+      end
+    end
+  end
+
+  describe 'DELETE /api/v1/accounts/{account.id}/conversations/:id/unpin' do
+    let(:conversation) { create(:conversation, account: account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/unpin"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      before { create(:inbox_member, user: agent, inbox: conversation.inbox) }
+
+      it 'removes only the pin of the current agent' do
+        other_agent = create(:user, account: account, role: :agent)
+        create(:inbox_member, user: other_agent, inbox: conversation.inbox)
+        create(:conversation_pin, conversation: conversation, user: agent, account: account)
+        create(:conversation_pin, conversation: conversation, user: other_agent, account: account)
+
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/unpin",
+               headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.conversation_pins.pluck(:user_id)).to eq([other_agent.id])
+      end
+
+      it 'succeeds when the conversation is not pinned' do
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/unpin",
+               headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:success)
+      end
+
+      it 'still removes the pin after the agent loses access to the inbox' do
+        create(:conversation_pin, conversation: conversation, user: agent, account: account)
+        agent.inbox_members.destroy_all
+
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/unpin",
+               headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.conversation_pins.count).to eq(0)
+      end
+
+      it 'does not remove the pin of another agent' do
+        other_agent = create(:user, account: account, role: :agent)
+        create(:inbox_member, user: other_agent, inbox: conversation.inbox)
+        create(:conversation_pin, conversation: conversation, user: other_agent, account: account)
+
+        delete "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/unpin",
+               headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(conversation.conversation_pins.pluck(:user_id)).to eq([other_agent.id])
+      end
+    end
+  end
+
+  describe 'GET /api/v1/accounts/{account.id}/conversations/pins' do
+    let(:conversation) { create(:conversation, account: account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/conversations/pins"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      before { create(:inbox_member, user: agent, inbox: conversation.inbox) }
+
+      it 'returns the pins of the current agent in the current account' do
+        pin = create(:conversation_pin, conversation: conversation, user: agent, account: account)
+        other_agent = create(:user, account: account, role: :agent)
+        other_conversation = create(:conversation, account: account)
+        create(:inbox_member, user: other_agent, inbox: other_conversation.inbox)
+        create(:conversation_pin, conversation: other_conversation, user: other_agent, account: account)
+
+        get "/api/v1/accounts/#{account.id}/conversations/pins",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body).to eq([{ 'conversation_id' => conversation.display_id, 'pinned_at' => pin.created_at.to_f }])
+      end
+
+      it 'skips a pin whose conversation is already gone' do
+        create(:conversation_pin, conversation: conversation, user: agent, account: account)
+        # `dependent: :destroy_async` leaves the pins behind until the job runs.
+        Conversation.where(id: conversation.id).delete_all
+
+        get "/api/v1/accounts/#{account.id}/conversations/pins",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body).to eq([])
+      end
+
+      it 'returns an empty list when nothing is pinned' do
+        get "/api/v1/accounts/#{account.id}/conversations/pins",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body).to eq([])
+      end
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/conversations/:id/mute' do
     let(:conversation) { create(:conversation, account: account) }
 
@@ -1317,6 +1601,30 @@ RSpec.describe 'Conversations API', type: :request do
         expect(conversation.reload.custom_attributes).not_to be_nil
         expect(conversation.reload.custom_attributes.count).to eq 3
       end
+
+      it 'merges custom attributes when merge is enabled' do
+        conversation.update!(custom_attributes: { existing_key: 'keep', user_id: 1 })
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/custom_attributes",
+             headers: agent.create_new_auth_token,
+             params: { custom_attributes: { user_id: 1001 }, merge: true },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.custom_attributes).to eq({ 'existing_key' => 'keep', 'user_id' => 1001 })
+      end
+
+      it 'replaces custom attributes by default' do
+        conversation.update!(custom_attributes: { existing_key: 'gone' })
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/custom_attributes",
+             headers: agent.create_new_auth_token,
+             params: { custom_attributes: { user_id: 1001 } },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.custom_attributes).to eq({ 'user_id' => 1001 })
+      end
     end
 
     context 'when it is a bot' do
@@ -1337,6 +1645,37 @@ RSpec.describe 'Conversations API', type: :request do
         expect(response).to have_http_status(:success)
         expect(conversation.reload.custom_attributes).not_to be_nil
         expect(conversation.reload.custom_attributes.count).to eq 3
+      end
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:id/destroy_custom_attributes' do
+    let(:conversation) { create(:conversation, account: account, custom_attributes: { test: 'test', test1: 'test1' }) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/destroy_custom_attributes"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+
+      before do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+      end
+
+      it 'deletes the given custom attribute' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/destroy_custom_attributes",
+             headers: agent.create_new_auth_token,
+             params: { custom_attributes: ['test'] },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(conversation.reload.custom_attributes).to eq({ 'test1' => 'test1' })
+        expect(response.parsed_body['custom_attributes']).to eq({ 'test1' => 'test1' })
       end
     end
   end

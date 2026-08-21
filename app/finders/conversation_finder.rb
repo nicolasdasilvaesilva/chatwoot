@@ -149,7 +149,8 @@ class ConversationFinder # rubocop:disable Metrics/ClassLength
       conversation_ids = current_account.mentions.where(user: current_user).pluck(:conversation_id)
       @conversations = @conversations.where(id: conversation_ids)
     when 'participating'
-      @conversations = current_user.participating_conversations.where(account_id: current_account.id)
+      participant_conversation_ids = ConversationParticipant.where(account_id: current_account.id, user_id: current_user.id).select(:conversation_id)
+      @conversations = @conversations.where(id: participant_conversation_ids)
     when 'unattended'
       @conversations = @conversations.unattended
     end
@@ -196,7 +197,7 @@ class ConversationFinder # rubocop:disable Metrics/ClassLength
 
     counts = @conversations.unscope(:order).pick(
       Arel.sql("COUNT(*) FILTER (WHERE assignee_id = #{current_user.id})"),
-      Arel.sql('COUNT(*) FILTER (WHERE assignee_id IS NULL)'),
+      Arel.sql('COUNT(*) FILTER (WHERE assignee_id IS NULL AND assignee_agent_bot_id IS NULL)'),
       Arel.sql('COUNT(*)')
     )
     counts || [0, 0, 0]
@@ -222,6 +223,9 @@ class ConversationFinder # rubocop:disable Metrics/ClassLength
 
   def conversations
     @conversations = conversations_base_query
+    # Pinned conversations lead the list regardless of the sort the agent picked, since every sort_on_* scope
+    # only appends to the ORDER BY.
+    @conversations = @conversations.pinned_first_for(current_user)
 
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)

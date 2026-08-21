@@ -194,6 +194,17 @@ RSpec.describe Conversation do
                                                                     changed_attributes: changed_attributes, performed_by: nil)
     end
 
+    it 'dispatches an assignee changed event when an agent bot is assigned' do
+      conversation = create(:conversation, status: 'open', account: account)
+      agent_bot = create(:agent_bot, account: account)
+
+      conversation.update!(assignee_agent_bot: agent_bot)
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with(described_class::ASSIGNEE_CHANGED, kind_of(Time), conversation: conversation, notifiable_assignee_change: false,
+                                                                changed_attributes: conversation.previous_changes, performed_by: nil)
+    end
+
     it 'will not run conversation_updated event for empty updates' do
       conversation.save!
       expect(Rails.configuration.dispatcher).not_to have_received(:dispatch)
@@ -293,6 +304,31 @@ RSpec.describe Conversation do
     end
   end
 
+  describe 'pins on status change' do
+    let(:account) { create(:account) }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:conversation) { create(:conversation, status: 'open', account: account, inbox: inbox) }
+    let(:user) { create(:user, account: account, role: :agent) }
+
+    before do
+      create(:inbox_member, user: user, inbox: inbox)
+      create(:conversation_pin, conversation: conversation, user: user, account: account)
+    end
+
+    it 'removes every pin when the conversation is resolved' do
+      expect { conversation.update!(status: :resolved) }.to change { conversation.conversation_pins.count }.from(1).to(0)
+    end
+
+    it 'keeps the pins when the conversation is snoozed' do
+      expect { conversation.update!(status: :snoozed, snoozed_until: 1.day.from_now) }
+        .not_to(change { conversation.conversation_pins.count })
+    end
+
+    it 'keeps the pins when the conversation is set to pending' do
+      expect { conversation.update!(status: :pending) }.not_to(change { conversation.conversation_pins.count })
+    end
+  end
+
   describe '#update_labels' do
     let(:account) { create(:account) }
     let(:conversation) { create(:conversation, account: account) }
@@ -371,6 +407,21 @@ RSpec.describe Conversation do
       conversation = create(:conversation, status: 'snoozed')
       expect(conversation.toggle_status).to be(true)
       expect(conversation.reload.status).to eq('open')
+    end
+  end
+
+  describe '#toggled_status' do
+    it 'reports where a toggle would land without writing it' do
+      conversation = create(:conversation, status: 'open')
+
+      expect(conversation.toggled_status).to eq(:resolved)
+      expect(conversation.reload.status).to eq('open')
+    end
+
+    it 'reopens from every non-open status' do
+      %w[resolved pending snoozed].each do |status|
+        expect(create(:conversation, status: status).toggled_status).to eq(:open)
+      end
     end
   end
 
@@ -1324,6 +1375,141 @@ RSpec.describe Conversation do
 
       expect(individual_conversation).to be_group_type_individual
       expect(group_conversation).to be_group_type_group
+    end
+  end
+
+  describe 'assignment takeover guard' do
+    let(:account) { create(:account) }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:owner) { create(:user, account: account, role: :agent) }
+    let(:other_agent) { create(:user, account: account, role: :agent) }
+    let(:administrator) { create(:user, account: account, role: :administrator) }
+    let(:conversation) { create(:conversation, account: account, inbox: inbox, assignee: owner) }
+
+    before do
+      create(:inbox_member, user: owner, inbox: inbox)
+      create(:inbox_member, user: other_agent, inbox: inbox)
+      conversation
+    end
+
+    after { Current.reset }
+
+    context 'when the inbox allows takeover' do
+      it 'lets another agent take the conversation over' do
+        Current.user = other_agent
+
+        expect { conversation.update!(assignee: other_agent) }
+          .to change { conversation.reload.assignee }.from(owner).to(other_agent)
+      end
+    end
+
+    context 'when the inbox prevents takeover' do
+      before { inbox.update!(prevent_assignment_takeover: true) }
+
+      it 'refuses another agent with the current assignee name' do
+        Current.user = other_agent
+
+        expect { conversation.update!(assignee: other_agent) }
+          .to raise_error(CustomExceptions::Conversation::AlreadyAssigned, /#{owner.available_name}/)
+        expect(conversation.reload.assignee).to eq(owner)
+      end
+
+      # Otherwise the takeover is just a two-step process: unassign, then claim.
+      it 'refuses another agent unassigning the conversation' do
+        Current.user = other_agent
+
+        expect { conversation.update!(assignee: nil) }
+          .to raise_error(CustomExceptions::Conversation::AlreadyAssigned)
+      end
+
+      it 'lets the current assignee hand the conversation over' do
+        Current.user = owner
+
+        expect { conversation.update!(assignee: other_agent) }
+          .to change { conversation.reload.assignee }.from(owner).to(other_agent)
+      end
+
+      it 'lets the current assignee release the conversation' do
+        Current.user = owner
+
+        expect { conversation.update!(assignee: nil) }
+          .to change { conversation.reload.assignee }.from(owner).to(nil)
+      end
+
+      it 'lets an administrator reassign the conversation' do
+        Current.user = administrator
+
+        expect { conversation.update!(assignee: other_agent) }
+          .to change { conversation.reload.assignee }.from(owner).to(other_agent)
+      end
+
+      # Round-robin, automation rules and voice webhooks all reach the callback
+      # without a Current.user, which is what tells them apart from a claim.
+      it 'lets automated assignment through' do
+        expect { conversation.update!(assignee: other_agent) }
+          .to change { conversation.reload.assignee }.from(owner).to(other_agent)
+      end
+
+      # Two agents claiming the same free conversation both load it with a nil
+      # assignee, so a guard that trusted `assignee_id_was` would let both write
+      # and the second would silently win. That is the very race this feature
+      # exists to close, so it is checked against the database under a row lock.
+      it 'refuses a claim made against a stale copy of the conversation' do
+        inbox.update!(enable_auto_assignment: false)
+        free = create(:conversation, account: account, inbox: inbox, assignee: nil)
+        stale = described_class.find(free.id)
+
+        Current.user = owner
+        free.update!(assignee: owner)
+
+        Current.user = other_agent
+        stale.assignee = other_agent
+
+        expect { stale.save! }.to raise_error(CustomExceptions::Conversation::AlreadyAssigned)
+        expect(free.reload.assignee).to eq(owner)
+      end
+
+      # A bot-authenticated request lands here with an AgentBot in Current.user,
+      # whose id would otherwise be compared against users.id.
+      it 'lets an agent bot reassign the conversation' do
+        Current.user = create(:agent_bot, account: account)
+
+        expect { conversation.update!(assignee: other_agent) }
+          .to change { conversation.reload.assignee }.from(owner).to(other_agent)
+      end
+
+      it 'lets an agent claim a conversation that has no assignee' do
+        inbox.update!(enable_auto_assignment: false)
+        unassigned = create(:conversation, account: account, inbox: inbox, assignee: nil)
+        Current.user = other_agent
+
+        expect { unassigned.update!(assignee: other_agent) }
+          .to change { unassigned.reload.assignee }.from(nil).to(other_agent)
+      end
+    end
+  end
+
+  describe '#status_changed_at' do
+    let(:conversation) { create(:conversation) }
+
+    it 'is set on create' do
+      expect(conversation.status_changed_at).to be_present
+    end
+
+    it 'is updated on every status transition' do
+      original = conversation.status_changed_at
+
+      travel_to(1.hour.from_now) { conversation.update!(status: :resolved) }
+
+      expect(conversation.reload.status_changed_at).to be > original
+    end
+
+    it 'is untouched by non-status saves' do
+      original = conversation.status_changed_at
+
+      travel_to(1.hour.from_now) { conversation.update!(priority: :high) }
+
+      expect(conversation.reload.status_changed_at).to be_within(1.second).of(original)
     end
   end
 end
