@@ -16,6 +16,7 @@
 #  priority               :integer
 #  snoozed_until          :datetime
 #  status                 :integer          default("open"), not null
+#  status_changed_at      :datetime
 #  uuid                   :uuid             not null
 #  waiting_since          :datetime
 #  created_at             :datetime         not null
@@ -42,6 +43,7 @@
 #  index_conversations_on_campaign_id                 (campaign_id)
 #  index_conversations_on_contact_id                  (contact_id)
 #  index_conversations_on_contact_inbox_id            (contact_inbox_id)
+#  index_conversations_on_created_at                  (created_at)
 #  index_conversations_on_first_reply_created_at      (first_reply_created_at)
 #  index_conversations_on_id_and_account_id           (account_id,id)
 #  index_conversations_on_identifier_and_account_id   (identifier,account_id)
@@ -93,8 +95,8 @@ class Conversation < ApplicationRecord
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
   enum group_type: { individual: 0, group: 1 }, _prefix: true
 
-  scope :unassigned, -> { where(assignee_id: nil) }
-  scope :assigned, -> { where.not(assignee_id: nil) }
+  scope :unassigned, -> { where(assignee_id: nil, assignee_agent_bot_id: nil) }
+  scope :assigned, -> { where.not(assignee_id: nil).or(where.not(assignee_agent_bot_id: nil)) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :sort_on_unread, lambda { |_direction|
     order(unread_messages_count_arel.desc).sort_on_last_activity_at('desc')
@@ -109,6 +111,18 @@ class Conversation < ApplicationRecord
     return none if auto_resolve_after.to_i.zero?
 
     open.where('last_activity_at < ?', Time.now.utc - auto_resolve_after.minutes)
+  }
+
+  # Puts the conversations the given user pinned first, most recently pinned on top. The join is kept as a
+  # literal SQL string (with the table name spelled out in the ON clause) so Rails does not promote it to an
+  # eager load, and the unique index on [user_id, conversation_id] keeps it 1:0..1, so no row is duplicated.
+  scope :pinned_first_for, lambda { |user|
+    joins(
+      sanitize_sql_array(
+        ['LEFT OUTER JOIN conversation_pins ON conversation_pins.conversation_id = conversations.id AND conversation_pins.user_id = ?',
+         user.id]
+      )
+    ).order(Arel.sql('conversation_pins.created_at DESC NULLS LAST'))
   }
 
   scope :last_user_message_at, lambda {
@@ -131,13 +145,16 @@ class Conversation < ApplicationRecord
   has_many :messages, dependent: :destroy_async, autosave: true
   has_one :csat_survey_response, dependent: :destroy_async
   has_many :conversation_participants, dependent: :destroy_async
+  has_many :conversation_pins, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
   has_many :attachments, through: :messages
   has_many :reporting_events, dependent: :destroy_async
   has_many :scheduled_messages, dependent: :destroy
   has_many :recurring_scheduled_messages, dependent: :destroy
+  has_many :automation_rule_pending_executions, dependent: :delete_all
 
   before_save :ensure_snooze_until_reset
+  before_save :set_status_changed_at
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
 
@@ -206,9 +223,18 @@ class Conversation < ApplicationRecord
 
   def toggle_status
     # FIXME: implement state machine with aasm
-    self.status = open? ? :resolved : :open
-    self.status = :open if pending? || snoozed?
+    self.status = toggled_status
     save # rubocop:disable Rails/SaveBang
+  end
+
+  # The status a toggle lands on, without writing it. Callers that have another
+  # change to make in the same save need this: `previous_changes` only carries
+  # the last save, and every status callback reads `saved_change_to_status?`
+  # from it.
+  def toggled_status
+    return :open if pending? || snoozed?
+
+    open? ? :resolved : :open
   end
 
   def toggle_priority(priority = nil)
@@ -216,10 +242,14 @@ class Conversation < ApplicationRecord
     save!
   end
 
-  def bot_handoff!
+  def bot_handoff!(dispatch_event: true)
     update!(waiting_since: Time.current) if waiting_since.blank?
     self.assignee_agent_bot = nil
     open!
+    dispatch_bot_handoff_event if dispatch_event
+  end
+
+  def dispatch_bot_handoff_event
     dispatcher_dispatch(CONVERSATION_BOT_HANDOFF)
   end
 
@@ -299,6 +329,7 @@ class Conversation < ApplicationRecord
 
   def execute_after_update_commit_callbacks
     handle_resolved_status_change
+    unpin_for_everyone_on_resolve
     notify_status_change
     create_activity
     invalidate_filtered_unread_count_conversation
@@ -314,8 +345,19 @@ class Conversation < ApplicationRecord
     # rubocop:enable Rails/SkipsModelValidations
   end
 
+  # A resolved conversation leaves the agent's open list, so it should not keep occupying one of their pin slots.
+  def unpin_for_everyone_on_resolve
+    return unless saved_change_to_status? && resolved?
+
+    conversation_pins.destroy_all
+  end
+
   def ensure_snooze_until_reset
     self.snoozed_until = nil unless snoozed?
+  end
+
+  def set_status_changed_at
+    self.status_changed_at = Time.current if new_record? || status_changed?
   end
 
   def ensure_waiting_since

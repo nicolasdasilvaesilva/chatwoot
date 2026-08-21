@@ -4,7 +4,6 @@ import { differenceInSeconds } from 'date-fns';
 import {
   isAConversationRoute,
   isAInboxViewRoute,
-  isNotificationRoute,
 } from 'dashboard/helper/routeHelpers';
 
 const MAX_DISCONNECT_SECONDS = 10800;
@@ -63,10 +62,14 @@ class ReconnectService {
   };
 
   fetchFilteredOrSavedConversations = async queryData => {
-    await this.store.dispatch('fetchFilteredConversations', {
-      queryData,
-      page: 1,
-    });
+    try {
+      await this.store.dispatch('fetchFilteredConversations', {
+        queryData,
+        page: 1,
+      });
+    } catch (error) {
+      // Ignore error, reconnect flow should continue
+    }
   };
 
   fetchConversationsOnReconnect = async () => {
@@ -118,8 +121,6 @@ class ReconnectService {
       await this.fetchNotificationsOnReconnect(
         this.store.getters['notifications/getNotificationFilters']
       );
-    } else if (isNotificationRoute(currentRoute)) {
-      await this.fetchNotificationsOnReconnect();
     }
   };
 
@@ -141,6 +142,8 @@ class ReconnectService {
   onReconnect = async () => {
     await this.handleRouteSpecificFetch();
     await this.revalidateCaches();
+    // Pin events that fired while the socket was down are lost, so the map is rebuilt from the server.
+    await this.store.dispatch('conversationPins/fetch');
     emitter.emit(BUS_EVENTS.WEBSOCKET_RECONNECT_COMPLETED);
   };
 }
