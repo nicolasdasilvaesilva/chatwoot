@@ -19,11 +19,6 @@
           "ERROR": "Custom body HTML must be less than 15,000 characters"
         }
       }
-    },
-    "CREATE_PORTAL_DIALOG": {
-      "NAME": {
-        "PLACEHOLDER": "User Guide | %BRAND%"
-      }
     }
   }
 }

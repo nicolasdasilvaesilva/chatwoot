@@ -53,18 +53,6 @@
             "IMPORT_SESSION_INSTALL": "Instalar a extensão"
           }
         }
-      },
-      "FB": {
-        "HELP": "Obs: ao fazer login, apenas temos acesso às mensagens da sua página. Suas mensagens privadas nunca podem ser acessadas pelo %BRAND%."
-      },
-      "AUTH": {
-        "DESC": "O %BRAND% suporta widgets de chats ao vivo, Facebook Messenger, perfis do Twitter, WhatsApp, E-mails, etc., como canais. Se você quiser criar um canal personalizado, você pode criá-lo usando o canal API. Para começar, escolha um dos canais abaixo."
-      },
-      "DETAILS": {
-        "DESC": "No menu abaixo, selecione a Página do Facebook que você deseja se conectar ao %BRAND%. Você também pode dar um nome personalizado para sua caixa de entrada para uma melhor identificação."
-      },
-      "FINISH": {
-        "DESC": "Você concluiu a integração da sua página do Facebook com o %BRAND%. Na próxima vez que um cliente enviar uma mensagem para sua página, a conversa aparecerá automaticamente na sua caixa de entrada. <br> Também estamos fornecendo um script de widget que você pode adicionar facilmente ao seu site. Assim que estiver disponível no seu site, os clientes poderão enviar mensagens diretamente do seu site, sem a ajuda de nenhuma ferramenta externa, e a conversa aparecerá aqui, no %BRAND%. Legal, hein? Com certeza estamos tentamos ser :)"
       }
     },
     "CONVERT": {
@@ -115,17 +103,7 @@
       "WHATSAPP_CLIENT_TOKEN_TITLE": "Token de Segurança",
       "WHATSAPP_CLIENT_TOKEN_SUBHEADER": "Seu Token de Segurança Z-API (veja a aba Segurança no painel do Z-API).",
       "WHATSAPP_CLIENT_TOKEN_UPDATE_TITLE": "Atualizar Token de Segurança",
-      "WHATSAPP_CLIENT_TOKEN_UPDATE_SUBHEADER": "Digite o novo Token de Segurança aqui",
-      "WHATSAPP_MANUAL_MIGRATION": {
-        "DIALOG": {
-          "VERIFY_NOTICE": "O %BRAND% verificará estas credenciais com o Meta antes de aplicar quaisquer alterações. Se a verificação falhar, a configuração atual ficará intacta."
-        },
-        "STEPS": {
-          "REVIEW_MIGRATION": {
-            "DESCRIPTION": "Confirme os detalhes da conexão antes de reconectar esta caixa de entrada. O %BRAND% verificará o token, WABA e o número de telefone com meta antes de aplicar as alterações."
-          }
-        }
-      }
+      "WHATSAPP_CLIENT_TOKEN_UPDATE_SUBHEADER": "Digite o novo Token de Segurança aqui"
     },
     "ASSIGNMENT": {
       "PREVENT_TAKEOVER": "Impedir tomada de conversa atribuída",
@@ -162,14 +140,6 @@
     "CHANNELS": {
       "WHATSAPP_BAILEYS": "WhatsApp - Baileys",
       "WHATSAPP_ZAPI": "WhatsApp - Z-API"
-    },
-    "CREATE_FLOW": {
-      "CHANNEL": {
-        "BODY": "Escolha o provedor que você deseja integrar com o %BRAND%."
-      }
-    },
-    "WIDGET_BUILDER": {
-      "BRANDING_TEXT": "Desenvolvido por %BRAND%"
     }
   }
 }

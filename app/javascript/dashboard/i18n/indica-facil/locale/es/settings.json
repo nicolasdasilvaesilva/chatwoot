@@ -35,9 +35,6 @@
           "INTERNAL_CHAT_MENTION": "Le mencionan en el chat interno",
           "INTERNAL_CHAT_NEW_MESSAGE": "Un nuevo mensaje directo en el chat interno"
         }
-      },
-      "INTERFACE_SECTION": {
-        "NOTE": "Customize the look and feel of your %BRAND% dashboard."
       }
     }
   },
@@ -60,15 +57,5 @@
     "TITLE": {
       "PIN_CONVERSATION": "Fijar / dejar de fijar la conversación"
     }
-  },
-  "SECURITY_SETTINGS": {
-    "SAML": {
-      "SP_ENTITY_ID": {
-        "TOOLTIP": "Unique identifier for %BRAND% as the Service Provider - Configure this in your IdP settings"
-      }
-    }
-  },
-  "CREATE_ACCOUNT": {
-    "NO_ACCOUNT_WARNING": "¡Oh oh! No hemos podido encontrar ninguna cuenta de \"%BRAND%\". Por favor, crea una nueva cuenta para continuar."
   }
 }

@@ -1,10 +1,129 @@
 {
   "CONVERSATION": {
-    "UNSUPPORTED_MESSAGE": "Este mensaje no es compatible. Puede verlo en la aplicación."
+    "UNSUPPORTED_MESSAGE": "Este mensaje no es compatible. Puede verlo en la aplicación.",
+    "NATIVE_APP_ADVISORY": "This message was sent from the native app. Reply from %BRAND% to maintain the message window."
   },
   "INBOX_MGMT": {
     "CSAT": {
       "WHATSAPP_NOTE": "Nota: puede crear una plantilla nueva (que se enviará a WhatsApp para su aprobación como Utilidad, aunque Meta puede clasificarla como Marketing según el contenido) o usar una plantilla ya aprobada de su administrador de plantillas de Meta. Las encuestas se envían una sola vez por conversación, según la regla de la encuesta."
+    },
+    "ADD": {
+      "FB": {
+        "HELP": "PS: Al iniciar sesión, sólo tenemos acceso a los mensajes de tu Página. Tus mensajes privados nunca pueden ser accedidos por %BRAND%."
+      },
+      "AUTH": {
+        "DESC": "%BRAND% soporta widgets de Live Chat, Facebook Messenger, perfiles de Twitter, WhatsApp, correos electrónicos, etc., como canales. Si quieres construir un canal personalizado, puedes crearlo usando el canal API. Para empezar, elige uno de los canales a continuación."
+      },
+      "DETAILS": {
+        "DESC": "En el menú desplegable de abajo, selecciona la página de Facebook que quieres conectar a %BRAND%. También puede dar un nombre personalizado a su bandeja de entrada para una mejor identificación."
+      },
+      "FINISH": {
+        "DESC": "Has terminado de integrar correctamente tu página de Facebook con %BRAND%. La próxima vez que un cliente envíe un mensaje a tu Página, la conversación aparecerá automáticamente en tu bandeja de entrada.<br>También le estamos proporcionando un script de widget que puede agregar fácilmente a su sitio web. Una vez que esto está en vivo en tu sitio web, los clientes pueden enviarle mensajes directamente desde su sitio web sin la ayuda de ninguna herramienta externa y la conversación aparecerá aquí, en %BRAND%.<br>¿Genial, eh? Bueno, estamos seguros de que intentaremos ser :)"
+      }
+    },
+    "SETTINGS_POPUP": {
+      "WHATSAPP_MANUAL_MIGRATION": {
+        "DIALOG": {
+          "VERIFY_NOTICE": "%BRAND% verificará estas credenciales con Meta antes de aplicar cualquier cambio. Si la verificación falla, la configuración actual se deja sin tocar."
+        },
+        "STEPS": {
+          "REVIEW_MIGRATION": {
+            "DESCRIPTION": "Confirme los detalles de conexión antes de volver a conectar esta bandeja de entrada. %BRAND% verificará el token, WABA y el número de teléfono con Meta antes de aplicar los cambios."
+          }
+        }
+      }
+    },
+    "CREATE_FLOW": {
+      "CHANNEL": {
+        "BODY": "Elija el proveedor que desea integrar con %BRAND%."
+      }
+    },
+    "WIDGET_BUILDER": {
+      "BRANDING_TEXT": "Desarrollado por %BRAND%"
+    }
+  },
+  "AUDIT_LOGS": {
+    "SIDEBAR_TXT": "<p><b>Registros de auditoría</b> </p><p> Registros de auditoría son pistas para eventos y acciones en un Sistema de %BRAND% </p>",
+    "LIST": {
+      "DESC": "Los registros de auditoría son pistas para eventos y acciones en un sistema de %BRAND%."
+    }
+  },
+  "GENERAL_SETTINGS": {
+    "UPDATE_CHATWOOT": "Hay una actualización {latest%BRAND%Version} para %BRAND% disponible. Por favor, actualiza tu instancia.",
+    "PAYMENT_PENDING": "Tu pago está pendiente. Por favor actualiza tu información de pago para seguir usando %BRAND%",
+    "UPGRADE": "Upgrade to continue using %BRAND%",
+    "LIMITS_UPGRADE": "Su cuenta ha excedido los límites de uso, por favor actualice su plan para seguir usando %BRAND%"
+  },
+  "HELP_CENTER": {
+    "CREATE_PORTAL_DIALOG": {
+      "NAME": {
+        "PLACEHOLDER": "User Guide | %BRAND%"
+      }
+    }
+  },
+  "INTEGRATION_SETTINGS": {
+    "WEBHOOK": {
+      "FORM": {
+        "DESC": "Los eventos Webhook te proporcionan la información en tiempo real sobre lo que está sucediendo en tu cuenta de %BRAND%. Por favor, introduce una URL válida para configurar un callback."
+      },
+      "PAYWALL": {
+        "AVAILABLE_ON": "Usa webhooks para recibir eventos en tiempo real de tu cuenta de %BRAND%."
+      },
+      "SIDEBAR_TXT": "<p><b>Webhooks</b> </p> <p>Webhooks son callbacks HTTP que se pueden definir para cada cuenta. Son activados por eventos como la creación de mensajes en %BRAND%. Puede crear más de un webhook para esta cuenta. <br /><br /> Para crear un webhook <b></b>, haga clic en el <b>Añadir un nuevo webhook</b> botón. También puede eliminar cualquier webhook existente haciendo clic en el botón Borrar.</p>"
+    },
+    "DASHBOARD_APPS": {
+      "SIDEBAR_TXT": "<p><b>Aplicaciones de panel</b></p><p>Aplicaciones de panel de control permiten a las organizaciones incrustar una aplicación dentro del panel de control de %BRAND% para proporcionar el contexto para los agentes de atención al cliente. Esta característica le permite crear una aplicación de forma independiente e incrustarla dentro del panel de control para proporcionar información de usuario, sus pedidos, o su historial de pagos anterior.</p><p>Cuando incrustas tu aplicación usando el panel de control en %BRAND%, tu aplicación obtendrá el contexto de la conversación y el contacto como un evento de ventana. Implementa un oyente para el evento del mensaje en tu página para recibir el contexto.</p><p>Para añadir una nueva aplicación de panel, haga clic en el botón 'Añadir una nueva aplicación de panel'.</p>"
+    },
+    "DESCRIPTION": "%BRAND% se integra con múltiples herramientas y servicios para mejorar la eficiencia de tu equipo. Explora la lista de abajo para configurar tus aplicaciones favoritas.",
+    "SLACK": {
+      "HELP_TEXT": {
+        "BODY": "Con esta integración, todas tus conversaciones entrantes serán sincronizadas con el canal ***{selectedChannelName}*** en tu espacio de trabajo en Slack. Puedes administrar todas tus conversaciones con los clientes directamente en tu canal y nunca perder un mensaje.\n\nEstas son las principales características de la integración:\n\n**Responda a conversaciones desde Slack:** Para responder a una conversación en el canal Slack ***{selectedChannelName}***, simplemente escriba el mensaje y envíalo como un hilo. Esto creará una respuesta que se enviará al cliente mediante %BRAND%. ¡Es así de simple!\n\n**Crea notas privadas:** Si quieres crear una nota privada en lugar de una respuesta, comience su mensaje con ***`note:`***. Esto asegurará que tu mensaje se mantenga privado y no será visible al cliente.\n\n**Asociar un perfil de agente:** Si la persona que responde en Slack tiene un agente de perfil en %BRAND% bajo el mismo correo electrónico, las respuestas serán asociadas con ese perfil de agente automáticamente. Esto quiere decir que puedes fácilmente estar al tanto de quién dijo qué y cuándo. Por el otro lado, cuando la persona que responde no tiene un perfil de agente, las respuestas aparecerán desde el perfil de bot al cliente."
+      },
+      "SELECT_CHANNEL": {
+        "DESCRIPTION": "Su espacio de trabajo de Slack ahora esta enlazado con %BRAND%. Sin embarbo, la integración esta actualmente inactiva. Para activar la integración y conectar un canal a %BRAND%, por favor haga clic en el siguiente boton.\n\n**Nota.** Si esta intentando conectar un canal privado, agregue la aplicación %BRAND% al canal de Slack antes de proceder con este paso."
+      }
+    }
+  },
+  "LABEL_MGMT": {
+    "SUGGESTIONS": {
+      "POWERED_BY": "%BRAND% AI"
+    }
+  },
+  "LOGIN": {
+    "TITLE": "Iniciar sesión en %BRAND%"
+  },
+  "MFA_VERIFICATION": {
+    "HELP_MODAL": {
+      "CONTACT_DESC_CLOUD": "If you've lost access to both your authenticator app and backup codes, please reach out to %BRAND% support for assistance."
+    }
+  },
+  "RESET_PASSWORD": {
+    "DESCRIPTION": "Introduzca la dirección de correo electrónico que utiliza para iniciar sesión en %BRAND% para obtener las instrucciones de restablecimiento de contraseña."
+  },
+  "PROFILE_SETTINGS": {
+    "FORM": {
+      "INTERFACE_SECTION": {
+        "NOTE": "Customize the look and feel of your %BRAND% dashboard."
+      }
+    }
+  },
+  "SECURITY_SETTINGS": {
+    "SAML": {
+      "SP_ENTITY_ID": {
+        "TOOLTIP": "Unique identifier for %BRAND% as the Service Provider - Configure this in your IdP settings"
+      }
+    }
+  },
+  "CREATE_ACCOUNT": {
+    "NO_ACCOUNT_WARNING": "¡Oh oh! No hemos podido encontrar ninguna cuenta de \"%BRAND%\". Por favor, crea una nueva cuenta para continuar."
+  },
+  "REGISTER": {
+    "GET_STARTED": "Get started with %BRAND%"
+  },
+  "YEAR_IN_REVIEW": {
+    "SHARE_MODAL": {
+      "SHARE_TEXT": "¡Mira mi resumen del año {year} con %BRAND%!",
+      "BRANDING": "Hecho con %BRAND%"
     }
   }
 }

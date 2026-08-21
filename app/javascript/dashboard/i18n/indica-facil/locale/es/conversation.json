@@ -82,8 +82,7 @@
     "CARD_CONTEXT_MENU": {
       "PIN": "Fijar",
       "UNPIN": "Dejar de fijar"
-    },
-    "NATIVE_APP_ADVISORY": "This message was sent from the native app. Reply from %BRAND% to maintain the message window."
+    }
   },
   "CONVERSATION_SIDEBAR": {
     "ACCORDION": {

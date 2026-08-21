@@ -1,10 +1,129 @@
 {
   "CONVERSATION": {
-    "UNSUPPORTED_MESSAGE": "This message is unsupported. You can view this message on the app."
+    "UNSUPPORTED_MESSAGE": "This message is unsupported. You can view this message on the app.",
+    "NATIVE_APP_ADVISORY": "This message was sent from the native app. Reply from %BRAND% to maintain the message window."
   },
   "INBOX_MGMT": {
     "CSAT": {
       "WHATSAPP_NOTE": "Note: You can create a new template (which will be sent for WhatsApp approval as Utility, though Meta may classify it as Marketing based on content) or use an existing approved template from your Meta template manager. Surveys are sent only once per conversation as per the survey rule."
+    },
+    "ADD": {
+      "FB": {
+        "HELP": "PS: By signing in, we only get access to your Page's messages. Your private messages can never be accessed by %BRAND%."
+      },
+      "AUTH": {
+        "DESC": "%BRAND% supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below."
+      },
+      "DETAILS": {
+        "DESC": "From the dropdown below, select the Facebook Page you want to connect to %BRAND%. You can also give a custom name to your inbox for better identification."
+      },
+      "FINISH": {
+        "DESC": "You have successfully finished integrating your Facebook Page with %BRAND%. Next time a customer messages your Page, the conversation will automatically appear on your inbox.<br>We are also providing you with a widget script that you can easily add to your website. Once this is live on your website, customers can message you right from your website without the help of any external tool and the conversation will appear right here, on %BRAND%.<br>Cool, huh? Well, we sure try to be :)"
+      }
+    },
+    "SETTINGS_POPUP": {
+      "WHATSAPP_MANUAL_MIGRATION": {
+        "DIALOG": {
+          "VERIFY_NOTICE": "%BRAND% will verify these credentials with Meta before applying any changes. If verification fails, the current configuration is left untouched."
+        },
+        "STEPS": {
+          "REVIEW_MIGRATION": {
+            "DESCRIPTION": "Confirm the connection details before reconnecting this inbox. %BRAND% will verify the token, WABA, and phone number with Meta before applying changes."
+          }
+        }
+      }
+    },
+    "CREATE_FLOW": {
+      "CHANNEL": {
+        "BODY": "Choose the provider you want to integrate with %BRAND%."
+      }
+    },
+    "WIDGET_BUILDER": {
+      "BRANDING_TEXT": "Powered by %BRAND%"
+    }
+  },
+  "AUDIT_LOGS": {
+    "SIDEBAR_TXT": "<p><b>Audit Logs</b> </p><p> Audit Logs are trails for events and actions in a %BRAND% System. </p>",
+    "LIST": {
+      "DESC": "Audit Logs are trails for events and actions in a %BRAND% System."
+    }
+  },
+  "GENERAL_SETTINGS": {
+    "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for %BRAND% is available. Please update your instance.",
+    "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using %BRAND%",
+    "UPGRADE": "Upgrade to continue using %BRAND%",
+    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using %BRAND%"
+  },
+  "HELP_CENTER": {
+    "CREATE_PORTAL_DIALOG": {
+      "NAME": {
+        "PLACEHOLDER": "User Guide | %BRAND%"
+      }
+    }
+  },
+  "INTEGRATION_SETTINGS": {
+    "WEBHOOK": {
+      "FORM": {
+        "DESC": "Webhook events provide you the realtime information about what's happening in your %BRAND% account. Please enter a valid URL to configure a callback."
+      },
+      "PAYWALL": {
+        "AVAILABLE_ON": "Use webhooks to receive real-time events from your %BRAND% account."
+      },
+      "SIDEBAR_TXT": "<p><b>Webhooks</b> </p> <p>Webhooks are HTTP callbacks which can be defined for every account. They are triggered by events like message creation in %BRAND%. You can create more than one webhook for this account. <br /><br /> For creating a <b>webhook</b>, click on the <b>Add new webhook</b> button. You can also remove any existing webhook by clicking on the Delete button.</p>"
+    },
+    "DASHBOARD_APPS": {
+      "SIDEBAR_TXT": "<p><b>Dashboard Apps</b></p><p>Dashboard Apps allow organizations to embed an application inside the %BRAND% dashboard to provide the context for customer support agents. This feature allows you to create an application independently and embed that inside the dashboard to provide user information, their orders, or their previous payment history.</p><p>When you embed your application using the dashboard in %BRAND%, your application will get the context of the conversation and contact as a window event. Implement a listener for the message event on your page to receive the context.</p><p>To add a new dashboard app, click on the button 'Add a new dashboard app'.</p>"
+    },
+    "DESCRIPTION": "%BRAND% integrates with multiple tools and services to improve your team's efficiency. Explore the list below to configure your favorite apps.",
+    "SLACK": {
+      "HELP_TEXT": {
+        "BODY": "With this integration, all of your incoming conversations will be synced to the ***{selectedChannelName}*** channel in your Slack workspace. You can manage all your customer conversations right within the channel and never miss a message.\n\nHere are the main features of the integration:\n\n**Respond to conversations from within Slack:** To respond to a conversation in the ***{selectedChannelName}*** Slack channel, simply type out your message and send it as a thread. This will create a response back to the customer through %BRAND%. It's that simple!\n\n **Create private notes:** If you want to create private notes instead of replies, start your message with ***`note:`***. This ensures that your message is kept private and won't be visible to the customer.\n\n**Associate an agent profile:** If the person who replied on Slack has an agent profile in %BRAND% under the same email, the replies will be associated with that agent profile automatically. This means you can easily track who said what and when. On the other hand, when the replier doesn't have an associated agent profile, the replies will appear from the bot profile to the customer."
+      },
+      "SELECT_CHANNEL": {
+        "DESCRIPTION": "Your Slack workspace is now linked with %BRAND%. However, the integration is currently inactive. To activate the integration and connect a channel to %BRAND%, please click the button below.\n\n**Note:** If you are attempting to connect a private channel, add the Chatwoot app to the Slack channel before proceeding with this step."
+      }
+    }
+  },
+  "LABEL_MGMT": {
+    "SUGGESTIONS": {
+      "POWERED_BY": "%BRAND% AI"
+    }
+  },
+  "LOGIN": {
+    "TITLE": "Login to %BRAND%"
+  },
+  "MFA_VERIFICATION": {
+    "HELP_MODAL": {
+      "CONTACT_DESC_CLOUD": "If you've lost access to both your authenticator app and backup codes, please reach out to %BRAND% support for assistance."
+    }
+  },
+  "RESET_PASSWORD": {
+    "DESCRIPTION": "Enter the email address you use to log in to %BRAND% to get the password reset instructions."
+  },
+  "PROFILE_SETTINGS": {
+    "FORM": {
+      "INTERFACE_SECTION": {
+        "NOTE": "Customize the look and feel of your %BRAND% dashboard."
+      }
+    }
+  },
+  "SECURITY_SETTINGS": {
+    "SAML": {
+      "SP_ENTITY_ID": {
+        "TOOLTIP": "Unique identifier for %BRAND% as the Service Provider - Configure this in your IdP settings"
+      }
+    }
+  },
+  "CREATE_ACCOUNT": {
+    "NO_ACCOUNT_WARNING": "Uh oh! We could not find any %BRAND% accounts. Please create a new account to continue."
+  },
+  "REGISTER": {
+    "GET_STARTED": "Get started with %BRAND%"
+  },
+  "YEAR_IN_REVIEW": {
+    "SHARE_MODAL": {
+      "SHARE_TEXT": "Check out my {year} Year in Review with %BRAND%!",
+      "BRANDING": "Made with %BRAND%"
     }
   }
 }

@@ -1,10 +1,6 @@
 {
   "GENERAL_SETTINGS": {
-    "SUPER_ADMIN_ONLY_NOTICE": "Este mensaje solo es visible para los administradores del sistema.",
-    "UPDATE_CHATWOOT": "Hay una actualización {latest%BRAND%Version} para %BRAND% disponible. Por favor, actualiza tu instancia.",
-    "PAYMENT_PENDING": "Tu pago está pendiente. Por favor actualiza tu información de pago para seguir usando %BRAND%",
-    "UPGRADE": "Upgrade to continue using %BRAND%",
-    "LIMITS_UPGRADE": "Su cuenta ha excedido los límites de uso, por favor actualice su plan para seguir usando %BRAND%"
+    "SUPER_ADMIN_ONLY_NOTICE": "Este mensaje solo es visible para los administradores del sistema."
   },
   "NOTIFICATIONS_PAGE": {
     "TYPE_LABEL": {

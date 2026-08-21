@@ -1,8 +1,1 @@
-{
-  "AUDIT_LOGS": {
-    "SIDEBAR_TXT": "<p><b>Registros de auditoría</b> </p><p> Registros de auditoría son pistas para eventos y acciones en un Sistema de %BRAND% </p>",
-    "LIST": {
-      "DESC": "Los registros de auditoría son pistas para eventos y acciones en un sistema de %BRAND%."
-    }
-  }
-}
+{}
