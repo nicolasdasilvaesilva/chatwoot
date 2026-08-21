@@ -1,0 +1,25 @@
+{
+  "CALLS_PAGE": {
+    "SETUP": {
+      "SUBTITLE": "Configure um canal de voz para começar a atender chamadas com sua equipe. Cada chamada, junto com a gravação, aparece aqui."
+    },
+    "FILTERS": {
+      "OTHER_ACTIVITY": "Outras atividades",
+      "OUTGOING": "Feitas",
+      "ASSIGNEE": "Responsável",
+      "ALL_ASSIGNEES": "Todos os responsáveis",
+      "INBOX": "Caixa de entrada"
+    },
+    "STATUS": {
+      "ONGOING": "Em curso",
+      "INCOMING": "Recebida",
+      "OUTGOING": "Feita",
+      "MISSED": "Perdida",
+      "FAILED": "Falhou"
+    },
+    "ROW": {
+      "DIALED_BY": "Discada por",
+      "NO_AGENT": "Nenhum agente atendeu esta chamada"
+    }
+  }
+}

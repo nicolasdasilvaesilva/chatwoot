@@ -35,6 +35,9 @@
           "INTERNAL_CHAT_MENTION": "You are mentioned in internal chat",
           "INTERNAL_CHAT_NEW_MESSAGE": "A new direct message in internal chat"
         }
+      },
+      "INTERFACE_SECTION": {
+        "NOTE": "Customize the look and feel of your %BRAND% dashboard."
       }
     }
   },
@@ -57,5 +60,15 @@
     "TITLE": {
       "PIN_CONVERSATION": "Pin / unpin conversation"
     }
+  },
+  "SECURITY_SETTINGS": {
+    "SAML": {
+      "SP_ENTITY_ID": {
+        "TOOLTIP": "Unique identifier for %BRAND% as the Service Provider - Configure this in your IdP settings"
+      }
+    }
+  },
+  "CREATE_ACCOUNT": {
+    "NO_ACCOUNT_WARNING": "Uh oh! We could not find any %BRAND% accounts. Please create a new account to continue."
   }
 }

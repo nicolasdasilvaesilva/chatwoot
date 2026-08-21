@@ -19,6 +19,11 @@
           "ERROR": "El HTML personalizado de body debe tener menos de 15.000 caracteres"
         }
       }
+    },
+    "CREATE_PORTAL_DIALOG": {
+      "NAME": {
+        "PLACEHOLDER": "User Guide | %BRAND%"
+      }
     }
   }
 }
