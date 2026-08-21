@@ -19,7 +19,7 @@ es:
     scheduled_messages:
       cannot_delete_processed: No se puede eliminar un mensaje programado que ya se envió o que falló
     conversations:
-      already_assigned: "%{agent_name} ya está atendiendo esta conversación."
+      already_assigned: '%{agent_name} ya está atendiendo esta conversación.'
     conversation_pins:
       limit_reached: Puede fijar hasta %{limit} conversaciones.
       conversation_resolved: No se puede fijar una conversación resuelta.
@@ -37,38 +37,38 @@ es:
     activity:
       group_participants:
         add:
-          single: "%{author_name} añadió a %{contact_name} al grupo"
-          multiple: "%{author_name} añadió a %{contact_names} y %{last_contact_name} al grupo"
-        join: "%{contact_name} se unió mediante el enlace de invitación del grupo"
-        leave: "%{contact_name} salió del grupo"
+          single: '%{author_name} añadió a %{contact_name} al grupo'
+          multiple: '%{author_name} añadió a %{contact_names} y %{last_contact_name} al grupo'
+        join: '%{contact_name} se unió mediante el enlace de invitación del grupo'
+        leave: '%{contact_name} salió del grupo'
         remove:
-          single: "%{author_name} quitó a %{contact_name} del grupo"
-          multiple: "%{author_name} quitó a %{contact_names} y %{last_contact_name} del grupo"
+          single: '%{author_name} quitó a %{contact_name} del grupo'
+          multiple: '%{author_name} quitó a %{contact_names} y %{last_contact_name} del grupo'
         promote:
-          single: "%{author_name} promovió a %{contact_name} a administrador"
-          multiple: "%{author_name} promovió a %{contact_names} y %{last_contact_name} a administradores"
+          single: '%{author_name} promovió a %{contact_name} a administrador'
+          multiple: '%{author_name} promovió a %{contact_names} y %{last_contact_name} a administradores'
         demote:
-          single: "%{author_name} degradó a %{contact_name} a miembro"
-          multiple: "%{author_name} degradó a %{contact_names} y %{last_contact_name} a miembros"
+          single: '%{author_name} degradó a %{contact_name} a miembro'
+          multiple: '%{author_name} degradó a %{contact_names} y %{last_contact_name} a miembros'
       groups_update:
         subject_changed: '%{author_name} cambió el nombre del grupo a "%{value}"'
-        description_changed: "%{author_name} cambió la descripción del grupo"
-        description_removed: "%{author_name} eliminó la descripción del grupo"
-        restrict_enabled: "%{author_name} cambió la configuración para que solo los administradores puedan editar la configuración del grupo"
-        restrict_disabled: "%{author_name} cambió la configuración para que todos los miembros puedan editar la configuración del grupo"
-        announce_enabled: "%{author_name} cambió la configuración de este grupo para que solo los administradores puedan enviar mensajes"
-        announce_disabled: "%{author_name} cambió la configuración de este grupo para que todos los miembros puedan enviar mensajes"
-        member_add_mode_enabled: "%{author_name} cambió la configuración de este grupo para que todos los miembros puedan añadir a otras personas"
-        member_add_mode_disabled: "%{author_name} cambió la configuración de este grupo para que solo los administradores puedan añadir a otras personas"
-        join_approval_mode_enabled: "%{author_name} activó la aprobación del administrador para unirse a este grupo"
-        join_approval_mode_disabled: "%{author_name} desactivó la aprobación del administrador para unirse a este grupo"
-        invite_link_reset: "%{author_name} restableció el enlace de invitación de este grupo"
-        membership_request_created: "%{contact_name} quiere unirse al grupo"
-        membership_request_revoked: "%{contact_name} ya no quiere unirse al grupo"
-        icon_changed: "%{author_name} cambió la imagen del grupo"
+        description_changed: '%{author_name} cambió la descripción del grupo'
+        description_removed: '%{author_name} eliminó la descripción del grupo'
+        restrict_enabled: '%{author_name} cambió la configuración para que solo los administradores puedan editar la configuración del grupo'
+        restrict_disabled: '%{author_name} cambió la configuración para que todos los miembros puedan editar la configuración del grupo'
+        announce_enabled: '%{author_name} cambió la configuración de este grupo para que solo los administradores puedan enviar mensajes'
+        announce_disabled: '%{author_name} cambió la configuración de este grupo para que todos los miembros puedan enviar mensajes'
+        member_add_mode_enabled: '%{author_name} cambió la configuración de este grupo para que todos los miembros puedan añadir a otras personas'
+        member_add_mode_disabled: '%{author_name} cambió la configuración de este grupo para que solo los administradores puedan añadir a otras personas'
+        join_approval_mode_enabled: '%{author_name} activó la aprobación del administrador para unirse a este grupo'
+        join_approval_mode_disabled: '%{author_name} desactivó la aprobación del administrador para unirse a este grupo'
+        invite_link_reset: '%{author_name} restableció el enlace de invitación de este grupo'
+        membership_request_created: '%{contact_name} quiere unirse al grupo'
+        membership_request_revoked: '%{contact_name} ya no quiere unirse al grupo'
+        icon_changed: '%{author_name} cambió la imagen del grupo'
       recurring_message_failed: No se pudo enviar el mensaje programado recurrente. La siguiente repetición está programada para %{next_date}.
       recurring_message_completed: La serie de mensajes programados recurrentes terminó después de %{count} repeticiones.
-      recurring_message_cancelled: "%{agent} detuvo el mensaje programado recurrente."
+      recurring_message_cancelled: '%{agent} detuvo el mensaje programado recurrente.'
       unknown_agent: Desconocido
   contacts:
     sync_group:
@@ -84,18 +84,18 @@ es:
       weekly:
         one: Cada semana
         other: Cada %{count} semanas
-      weekly_on: "%{prefix} el %{days}"
+      weekly_on: '%{prefix} el %{days}'
       monthly:
         one: Cada mes
         other: Cada %{count} meses
-      monthly_on_weekday: "%{prefix} el %{ordinal} %{weekday}"
+      monthly_on_weekday: '%{prefix} el %{ordinal} %{weekday}'
       yearly:
         one: Cada año
         other: Cada %{count} años
       until_date: hasta el %{date}
       after_count:
-        one: "%{count} repetición"
-        other: "%{count} repeticiones"
+        one: '%{count} repetición'
+        other: '%{count} repeticiones'
       ordinals:
         first: primer
         second: segundo
@@ -103,3 +103,11 @@ es:
         fourth: cuarto
         fifth: quinto
         last: último
+  integration_apps:
+    dyte:
+      short_description: Start video/voice calls with customers directly from %{brand}.
+      description: Dyte es un producto que integra funcionalidades de audio y video en tu aplicación. Con esta integración, tus agentes pueden iniciar llamadas de video/voz con tus clientes directamente desde %{brand}.
+    slack:
+      description: Integra %{brand} con Slack para mantener a tu equipo sincronizado. Esta integración te permite recibir notificaciones de nuevas conversaciones y responder directamente desde la interfaz de Slack.
+    webhooks:
+      description: Los eventos de webhook proporcionan actualizaciones en tiempo real sobre las actividades en tu cuenta de %{brand}. Puedes suscribirte a los eventos que prefieras y %{brand} te enviará llamadas HTTP con las actualizaciones.

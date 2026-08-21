@@ -19,7 +19,7 @@ pt_BR:
     scheduled_messages:
       cannot_delete_processed: Não é possível excluir uma mensagem agendada que já foi enviada ou falhou
     conversations:
-      already_assigned: "%{agent_name} já está atendendo esta conversa."
+      already_assigned: '%{agent_name} já está atendendo esta conversa.'
     conversation_pins:
       limit_reached: Você pode fixar no máximo %{limit} conversas.
       conversation_resolved: Não é possível fixar uma conversa resolvida.
@@ -37,35 +37,35 @@ pt_BR:
     activity:
       group_participants:
         add:
-          single: "%{author_name} adicionou %{contact_name} ao grupo"
-          multiple: "%{author_name} adicionou %{contact_names} e %{last_contact_name} ao grupo"
-        join: "%{contact_name} entrou usando o link do grupo"
-        leave: "%{contact_name} saiu do grupo"
+          single: '%{author_name} adicionou %{contact_name} ao grupo'
+          multiple: '%{author_name} adicionou %{contact_names} e %{last_contact_name} ao grupo'
+        join: '%{contact_name} entrou usando o link do grupo'
+        leave: '%{contact_name} saiu do grupo'
         remove:
-          single: "%{author_name} removeu %{contact_name} do grupo"
-          multiple: "%{author_name} removeu %{contact_names} e %{last_contact_name} do grupo"
+          single: '%{author_name} removeu %{contact_name} do grupo'
+          multiple: '%{author_name} removeu %{contact_names} e %{last_contact_name} do grupo'
         promote:
-          single: "%{author_name} promoveu %{contact_name} a admin"
-          multiple: "%{author_name} promoveu %{contact_names} e %{last_contact_name} a admin"
+          single: '%{author_name} promoveu %{contact_name} a admin'
+          multiple: '%{author_name} promoveu %{contact_names} e %{last_contact_name} a admin'
         demote:
-          single: "%{author_name} rebaixou %{contact_name} a membro"
-          multiple: "%{author_name} rebaixou %{contact_names} e %{last_contact_name} a membro"
+          single: '%{author_name} rebaixou %{contact_name} a membro'
+          multiple: '%{author_name} rebaixou %{contact_names} e %{last_contact_name} a membro'
       groups_update:
         subject_changed: '%{author_name} alterou o nome do grupo para "%{value}"'
-        description_changed: "%{author_name} alterou a descrição do grupo"
-        description_removed: "%{author_name} removeu a descrição do grupo"
-        restrict_enabled: "%{author_name} mudou as configurações para permitir que somente admins editem as configurações do grupo"
-        restrict_disabled: "%{author_name} mudou as configurações para permitir que todos os membros editem as configurações do grupo"
-        announce_enabled: "%{author_name} mudou as configurações desse grupo para permitir que somente admins enviem mensagens ao grupo"
-        announce_disabled: "%{author_name} mudou as configurações do grupo para permitir que todos os membros enviem mensagens"
-        member_add_mode_enabled: "%{author_name} mudou as configurações do grupo para permitir que todos os membros adicionem outras pessoas"
-        member_add_mode_disabled: "%{author_name} mudou as configurações deste grupo para permitir que somente admins adicionem outras pessoas ao grupo"
-        join_approval_mode_enabled: "%{author_name} ativou a autorização de admins para entrar neste grupo"
-        join_approval_mode_disabled: "%{author_name} desativou a autorização de admins para entrar neste grupo"
-        invite_link_reset: "%{author_name} redefiniu o link do grupo para convidar outras pessoas"
-        membership_request_created: "%{contact_name} deseja entrar no grupo"
-        membership_request_revoked: "%{contact_name} não deseja mais fazer parte do grupo"
-        icon_changed: "%{author_name} alterou a imagem do grupo"
+        description_changed: '%{author_name} alterou a descrição do grupo'
+        description_removed: '%{author_name} removeu a descrição do grupo'
+        restrict_enabled: '%{author_name} mudou as configurações para permitir que somente admins editem as configurações do grupo'
+        restrict_disabled: '%{author_name} mudou as configurações para permitir que todos os membros editem as configurações do grupo'
+        announce_enabled: '%{author_name} mudou as configurações desse grupo para permitir que somente admins enviem mensagens ao grupo'
+        announce_disabled: '%{author_name} mudou as configurações do grupo para permitir que todos os membros enviem mensagens'
+        member_add_mode_enabled: '%{author_name} mudou as configurações do grupo para permitir que todos os membros adicionem outras pessoas'
+        member_add_mode_disabled: '%{author_name} mudou as configurações deste grupo para permitir que somente admins adicionem outras pessoas ao grupo'
+        join_approval_mode_enabled: '%{author_name} ativou a autorização de admins para entrar neste grupo'
+        join_approval_mode_disabled: '%{author_name} desativou a autorização de admins para entrar neste grupo'
+        invite_link_reset: '%{author_name} redefiniu o link do grupo para convidar outras pessoas'
+        membership_request_created: '%{contact_name} deseja entrar no grupo'
+        membership_request_revoked: '%{contact_name} não deseja mais fazer parte do grupo'
+        icon_changed: '%{author_name} alterou a imagem do grupo'
       recurring_message_failed: Mensagem agendada recorrente falhou ao enviar. Próxima ocorrência agendada para %{next_date}.
       recurring_message_completed: Série de mensagem agendada recorrente concluída após %{count} ocorrências.
       recurring_message_cancelled: Recorrência de mensagem agendada foi interrompida por %{agent}.
@@ -84,18 +84,18 @@ pt_BR:
       weekly:
         one: Semanal
         other: A cada %{count} semanas
-      weekly_on: "%{prefix}: %{days}"
+      weekly_on: '%{prefix}: %{days}'
       monthly:
         one: Mensal
         other: A cada %{count} meses
-      monthly_on_weekday: "%{prefix} no(a) %{ordinal} %{weekday}"
+      monthly_on_weekday: '%{prefix} no(a) %{ordinal} %{weekday}'
       yearly:
         one: Anual
         other: A cada %{count} anos
       until_date: até %{date}
       after_count:
-        one: "%{count} ocorrência"
-        other: "%{count} ocorrências"
+        one: '%{count} ocorrência'
+        other: '%{count} ocorrências'
       ordinals:
         first: primeiro(a)
         second: segundo(a)
@@ -103,3 +103,11 @@ pt_BR:
         fourth: quarto(a)
         fifth: quinto(a)
         last: último(a)
+  integration_apps:
+    dyte:
+      short_description: Iniciar chamadas de vídeo/voz com clientes diretamente do %{brand}.
+      description: O Cloudflare RealtimeKit permite que seus atendentes iniciem chamadas de vídeo e voz com seus clientes diretamente pelo %{brand}.
+    slack:
+      description: Integre %{brand} com Slack para manter seu time em sincronia. Essa integração permite que você receba notificações de novas conversas e as responda diretamente na interface do Slack.
+    webhooks:
+      description: Eventos webhook fornecem atualizações sobre atividades em tempo real na sua conta %{brand}. Você pode se inscrever em seus eventos preferidos, e o %{brand} enviará as chamadas HTTP com as atualizações.
