@@ -106,3 +106,9 @@ CLAUDE.local.md
 .pnpm-store/*
 local/
 Procfile.worktree
+
+# Lixo de ferramenta, nao de codigo: o log de acoes e os diffs do ultimo
+# commit sao gerados localmente e nao dizem nada a quem clona o repositorio.
+action_log.txt
+last_commit.diff
+last_commit_utf8.diff
