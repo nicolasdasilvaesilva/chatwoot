@@ -906,6 +906,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_130000) do
     t.datetime "waiting_since"
     t.text "cached_label_list"
     t.bigint "assignee_agent_bot_id"
+    t.string "ai_assignee_type"
     t.datetime "status_changed_at"
     t.integer "group_type", default: 0, null: false
     t.integer "redirect_origin_display_id"

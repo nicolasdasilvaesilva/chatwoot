@@ -296,7 +296,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   # Only stages the change; `toggle_status` owns the save.
   def handle_human_open
-    @conversation.assignee_agent_bot = nil
+    @conversation.ai_assignee = nil
     @conversation.assignee = Current.user if Current.user.agent?
   end
 

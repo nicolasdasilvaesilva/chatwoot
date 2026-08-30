@@ -1,5 +1,5 @@
 shared: &shared
-  version: '4.17.0-indica-facil.20'
+  version: '4.17.1-indica-facil.25'
 
 development:
   <<: *shared
