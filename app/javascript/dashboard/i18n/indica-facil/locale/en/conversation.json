@@ -60,7 +60,9 @@
         "NOT_CONNECTED": "WhatsApp is not connected. Please link your device again.",
         "NOT_CONNECTED_CONTACT_ADMIN": "WhatsApp is not connected. Click this button to try to reconnect, or please contact your administrator to link your device again.",
         "LINK_DEVICE": "Link device",
-        "RECONNECT_FAILED": "Failed to reconnect. Please contact your administrator to link your device again."
+        "RECONNECT_FAILED": "Failed to reconnect. Please contact your administrator to link your device again.",
+        "SEND_STALL": "WhatsApp is connected but cannot send messages. Link the device again to restore sending.",
+        "SEND_STALL_CONTACT_ADMIN": "WhatsApp is connected but cannot send messages. Your replies will not be delivered until an administrator links the device again."
       },
       "WHATSAPP_REACHOUT_RESTRICTION": {
         "RESTRICTED": "WhatsApp has temporarily restricted starting new conversations from this number.",
@@ -82,6 +84,13 @@
     "CARD_CONTEXT_MENU": {
       "PIN": "Pin",
       "UNPIN": "Unpin"
+    },
+    "HISTORY_SYNC": {
+      "BUTTON": "Load older messages",
+      "HELP": "Asks the phone for what came before. It has to be awake to answer, and it stays quiet once it has already sent this stretch.",
+      "REQUESTED": "Asked the phone for older messages. They appear here as it sends them.",
+      "ERROR": "Could not ask for older messages. Try again in a moment.",
+      "EXHAUSTED": "There is nothing older here. The rest of this conversation is only on the phone."
     }
   },
   "CONVERSATION_SIDEBAR": {

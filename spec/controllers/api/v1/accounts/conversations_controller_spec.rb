@@ -162,6 +162,96 @@ RSpec.describe 'Conversations API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/conversations/sync' do
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/sync"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:inbox) { create(:inbox, account: account) }
+      let!(:unassigned) { create(:conversation, account: account, inbox: inbox, assignee: nil) }
+
+      before do
+        create(:inbox_member, user: agent, inbox: inbox)
+      end
+
+      def sync(ids)
+        post "/api/v1/accounts/#{account.id}/conversations/sync",
+             headers: agent.create_new_auth_token,
+             params: { ids: ids },
+             as: :json
+      end
+
+      it 'returns the current state of the conversations it was asked about' do
+        unassigned.update!(assignee: agent)
+        sync([unassigned.display_id])
+
+        expect(response).to have_http_status(:success)
+        conversation = response.parsed_body['payload'].first
+        expect(conversation['id']).to eq(unassigned.display_id)
+        expect(conversation['meta']['assignee']['id']).to eq(agent.id)
+      end
+
+      # The rows worth asking about are the ones that stopped matching the tab, so answering only
+      # about the ones that still match would say nothing about any of them.
+      it 'ignores the tab filters entirely' do
+        resolved = create(:conversation, account: account, inbox: inbox, assignee: nil, status: :resolved)
+        assigned = create(:conversation, account: account, inbox: inbox, assignee: agent)
+        group = create(:conversation, account: account, inbox: inbox, assignee: nil, group_type: :group)
+
+        sync([resolved.display_id, assigned.display_id, group.display_id])
+
+        expect(response.parsed_body['payload'].map { |c| c['id'] })
+          .to contain_exactly(resolved.display_id, assigned.display_id, group.display_id)
+      end
+
+      it 'never answers about an id it was not given' do
+        other = create(:conversation, account: account, inbox: inbox, assignee: nil)
+
+        sync([unassigned.display_id])
+
+        expect(response.parsed_body['payload'].map { |c| c['id'] }).to contain_exactly(unassigned.display_id)
+        expect(response.parsed_body['payload'].map { |c| c['id'] }).not_to include(other.display_id)
+      end
+
+      it 'returns nothing when asked about nothing' do
+        sync(nil)
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['payload']).to be_empty
+      end
+
+      # What does not come back is what the caller drops, so a conversation in an inbox the agent
+      # cannot reach has to be absent rather than merely filtered out of a later step.
+      it 'leaves out conversations in inboxes the agent has no access to' do
+        other_inbox_conversation = create(:conversation, account: account, assignee: nil)
+
+        sync([unassigned.display_id, other_inbox_conversation.display_id])
+
+        expect(response.parsed_body['payload'].map { |c| c['id'] }).to contain_exactly(unassigned.display_id)
+      end
+
+      # Refused, not truncated: a short answer is indistinguishable from "these conversations are
+      # gone" to a caller that removes whatever does not come back.
+      it 'refuses a batch larger than one page instead of answering partially' do
+        sync((1..(Api::V1::Accounts::ConversationsController::SYNC_BATCH_SIZE + 1)).to_a)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'accepts a batch of exactly one page' do
+        sync((1..Api::V1::Accounts::ConversationsController::SYNC_BATCH_SIZE).to_a)
+
+        expect(response).to have_http_status(:success)
+      end
+    end
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/conversations/unread_counts' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -544,7 +634,7 @@ RSpec.describe 'Conversations API', type: :request do
           builder = double
           allow(Rails.configuration.dispatcher).to receive(:dispatch)
           allow(ContactInboxBuilder).to receive(:new)
-            .with(contact: contact, inbox: inbox, source_id: nil, hmac_verified: false, validate_baileys_phone: true).and_return(builder)
+            .with(contact: contact, inbox: inbox, source_id: nil, hmac_verified: false, validate_whatsapp_phone: true).and_return(builder)
           allow(builder).to receive(:perform)
           expect(builder).to receive(:perform)
 
@@ -1525,6 +1615,62 @@ RSpec.describe 'Conversations API', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(conversation.reload.muted?).to be(false)
+      end
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:id/sync_history' do
+    let(:channel) do
+      create(:channel_whatsapp, account: account, provider: 'baileys', validate_provider_config: false, sync_templates: false,
+                                provider_config: { 'webhook_verify_token' => 'x' },
+                                provider_connection: { 'connection' => 'open' })
+    end
+    let(:conversation) { create(:conversation, account: account, inbox: channel.inbox) }
+    let(:url) { "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/sync_history" }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post url
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+
+      before { create(:inbox_member, user: agent, inbox: conversation.inbox) }
+
+      # Whoever is reading the thread is who wants its history, so this is not held to the
+      # administrator bar the inbox-wide setting is.
+      it 'asks the provider for what came before' do
+        expect do
+          post url, headers: agent.create_new_auth_token, as: :json
+        end.to have_enqueued_job(Whatsapp::Session::ConversationHistoryJob).with(conversation)
+
+        expect(response).to have_http_status(:success)
+      end
+
+      # The request reaches the phone through the session, so a closed one would have the
+      # operator told it was asked and nothing would ever arrive.
+      it 'refuses while the session is down' do
+        channel.update!(provider_connection: { 'connection' => 'close' })
+
+        expect do
+          post url, headers: agent.create_new_auth_token, as: :json
+        end.not_to have_enqueued_job(Whatsapp::Session::ConversationHistoryJob)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'refuses on an inbox whose provider cannot fetch history' do
+        other = create(:conversation, account: account, inbox: create(:inbox, account: account))
+        create(:inbox_member, user: agent, inbox: other.inbox)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{other.display_id}/sync_history",
+             headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end

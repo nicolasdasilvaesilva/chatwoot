@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { INBOX_TYPES, isVoiceCallEnabled } from 'dashboard/helper/inbox';
+import { isSessionProvider } from 'dashboard/helper/whatsappSession';
 import {
   getEffectiveChannelType,
   stripUnsupportedMarkdown,
@@ -11,6 +12,7 @@ import {
   buildContactableInboxesList,
   prepareNewMessagePayload,
   prepareWhatsAppMessagePayload,
+  splitAttachmentsForChannel,
 } from 'dashboard/components-next/NewConversation/helpers/composeConversationHelper.js';
 
 import { useCopilotReply } from 'dashboard/composables/useCopilotReply';
@@ -76,12 +78,9 @@ const inboxTypes = computed(() => ({
   isEmail: props.targetInbox?.channelType === INBOX_TYPES.EMAIL,
   isTwilio: props.targetInbox?.channelType === INBOX_TYPES.TWILIO,
   isWhatsapp: props.targetInbox?.channelType === INBOX_TYPES.WHATSAPP,
-  isWhatsappBaileys:
+  isWhatsappSession:
     props.targetInbox?.channelType === INBOX_TYPES.WHATSAPP &&
-    props.targetInbox?.provider === 'baileys',
-  isWhatsappZapi:
-    props.targetInbox?.channelType === INBOX_TYPES.WHATSAPP &&
-    props.targetInbox?.provider === 'zapi',
+    isSessionProvider(props.targetInbox?.provider),
   isWebWidget: props.targetInbox?.channelType === INBOX_TYPES.WEB,
   isApi: props.targetInbox?.channelType === INBOX_TYPES.API,
   isEmailOrWebWidget:
@@ -116,10 +115,7 @@ const validationRules = computed(() => ({
   message: {
     required: requiredIf(() => {
       if (!inboxTypes.value.isWhatsapp) return true;
-      if (
-        inboxTypes.value.isWhatsappBaileys ||
-        inboxTypes.value.isWhatsappZapi
-      ) {
+      if (inboxTypes.value.isWhatsappSession) {
         return state.attachedFiles.length === 0;
       }
       return false;
@@ -143,9 +139,17 @@ const validationStates = computed(() => ({
   isMessageInvalid: v$.value.message.$dirty && v$.value.message.$invalid,
 }));
 
+// On a channel that carries one attachment per message, only the first file travels
+// with the conversation; the rest follow it as their own messages, which is what the
+// reply box already does. Without the split every file shows in Chatwoot and one
+// reaches the contact.
 const newMessagePayload = () => {
   const { message, subject, ccEmails, bccEmails, attachedFiles } = state;
-  return prepareNewMessagePayload({
+  const { first, rest } = splitAttachmentsForChannel({
+    targetInbox: props.targetInbox,
+    attachedFiles,
+  });
+  const payload = prepareNewMessagePayload({
     targetInbox: props.targetInbox,
     selectedContact: props.selectedContact,
     message,
@@ -153,12 +157,13 @@ const newMessagePayload = () => {
     ccEmails,
     bccEmails,
     currentUser: props.currentUser,
-    attachedFiles,
+    attachedFiles: first,
     directUploadsEnabled: props.isDirectUploadsEnabled,
     sendWithSignature: props.sendWithSignature,
     messageSignature: props.messageSignature,
     signatureSettings: props.signatureSettings,
   });
+  return { payload, followUpFiles: rest };
 };
 
 const contactableInboxesList = computed(() => {
@@ -282,8 +287,10 @@ const handleSendMessage = async () => {
   if (!isValid) return;
 
   try {
+    const { payload, followUpFiles } = newMessagePayload();
     const success = await emit('createConversation', {
-      payload: newMessagePayload(),
+      payload,
+      followUpFiles,
       isFromWhatsApp: false,
     });
     if (success) {
@@ -324,9 +331,7 @@ const handleSendTwilioMessage = async ({ message, templateParams }) => {
 
 const shouldShowMessageEditor = computed(() => {
   return (
-    (!inboxTypes.value.isWhatsapp ||
-      inboxTypes.value.isWhatsappBaileys ||
-      inboxTypes.value.isWhatsappZapi) &&
+    (!inboxTypes.value.isWhatsapp || inboxTypes.value.isWhatsappSession) &&
     !showNoInboxAlert.value &&
     !inboxTypes.value.isTwilioWhatsapp
   );
@@ -429,8 +434,7 @@ useKeyboardEvents({
       v-else
       :attached-files="state.attachedFiles"
       :is-whatsapp-inbox="inboxTypes.isWhatsapp"
-      :is-whatsapp-baileys-inbox="inboxTypes.isWhatsappBaileys"
-      :is-whatsapp-zapi-inbox="inboxTypes.isWhatsappZapi"
+      :is-whatsapp-session-inbox="inboxTypes.isWhatsappSession"
       :is-email-or-web-widget-inbox="inboxTypes.isEmailOrWebWidget"
       :is-twilio-sms-inbox="inboxTypes.isTwilioSMS"
       :is-twilio-whats-app-inbox="inboxTypes.isTwilioWhatsapp"

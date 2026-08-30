@@ -161,6 +161,7 @@ Rails.application.routes.draw do
           resources :conversations, only: [:index, :create, :show, :update, :destroy] do
             collection do
               get :meta
+              post :sync
               get :search
               get :unread_counts, to: 'conversations/unread_counts#index'
               get :pins
@@ -203,6 +204,7 @@ Rails.application.routes.draw do
               post :destroy_custom_attributes
               get :attachments
               get :inbox_assistant
+              post :sync_history
               get :reporting_events if ChatwootApp.enterprise?
             end
           end
@@ -358,6 +360,7 @@ Rails.application.routes.draw do
             get :message_templates, on: :member
             post :set_agent_bot, on: :member
             post :setup_channel_provider, on: :member
+            post :request_pairing_code, on: :member
             post :import_whatsapp_session, on: :member
             post :disconnect_channel_provider, on: :member
             post :convert_provider, on: :member
@@ -449,6 +452,7 @@ Rails.application.routes.draw do
 
           namespace :whatsapp do
             resource :authorization, only: [:create]
+            resources :session_providers, only: [:index]
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
@@ -734,6 +738,10 @@ Rails.application.routes.draw do
   post 'webhooks/line/:line_channel_id', to: 'webhooks/line#process_payload'
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
+  # Ahead of the phone-number route below, which is the legacy shape: this one has more
+  # segments, so the two cannot collide, and keeping them together is what makes that
+  # obvious to whoever adds the next provider.
+  post 'webhooks/whatsapp/session/uazapi/:channel_id/:webhook_token', to: 'webhooks/whatsapp/uazapi#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'

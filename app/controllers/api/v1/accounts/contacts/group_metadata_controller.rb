@@ -1,11 +1,13 @@
 class Api::V1::Accounts::Contacts::GroupMetadataController < Api::V1::Accounts::Contacts::BaseController
+  include GroupChannelResolver
+
   def update
     authorize @contact, :update?
     update_subject if metadata_params[:subject].present?
     update_description if metadata_params[:description].present?
     update_picture if metadata_params[:avatar].present?
     render json: { id: @contact.id, name: @contact.name, additional_attributes: @contact.additional_attributes }
-  rescue Whatsapp::Providers::WhatsappBaileysService::ProviderUnavailableError => e
+  rescue Whatsapp::Session::Errors::Error => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
@@ -31,9 +33,5 @@ class Api::V1::Accounts::Contacts::GroupMetadataController < Api::V1::Accounts::
     image_base64 = Base64.strict_encode64(avatar.read)
     channel.update_group_picture(@contact.identifier, image_base64)
     @contact.avatar.attach(avatar)
-  end
-
-  def channel
-    @channel ||= @contact.group_channel
   end
 end
