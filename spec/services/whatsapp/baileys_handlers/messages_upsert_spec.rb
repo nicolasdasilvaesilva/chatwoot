@@ -783,6 +783,27 @@ describe Whatsapp::BaileysHandlers::MessagesUpsert do
       expect(conversation.contact.group_type).to eq('group')
     end
 
+    # The mirror of the shape above: a phone-addressed group carries the author's phone in
+    # `participant` and their LID in `participantAlt`. Reading the alt as a phone number
+    # because it is digits put the LID in the contact's phone field and left the LID field
+    # empty, swapping the two.
+    it 'reads the author of a phone-addressed group by the address that is a phone number' do
+      params = build_params(
+        build_group_raw_message(
+          id: 'grp_pn_001',
+          text: 'Hello from a phone-addressed group',
+          sender_participant: "#{sender_phone}@s.whatsapp.net",
+          sender_alt: "#{sender_lid}@lid"
+        )
+      )
+
+      Whatsapp::IncomingMessageBaileysService.new(inbox: inbox, params: params).perform
+
+      sender = inbox.messages.find_by(source_id: 'grp_pn_001').sender
+      expect(sender.phone_number).to eq("+#{sender_phone}")
+      expect(sender.identifier).to eq("#{sender_lid}@lid")
+    end
+
     it 'processes a group image message with attachment' do
       stub_request(:get, whatsapp_channel.media_url('grp_img_001'))
         .to_return(status: 200, body: 'fake image data')
@@ -966,6 +987,23 @@ describe Whatsapp::BaileysHandlers::MessagesUpsert do
       end.to have_enqueued_job(Messages::DeleteOnChannelJob).with(sent.id)
 
       expect(sent.reload.source_id).to eq('RESERVED_4')
+    end
+
+    # The retries ran out before this echo arrived, so the message was marked failed. The
+    # echo proves it reached WhatsApp, and leaving it failed puts a Retry button on it —
+    # Retry clears the reservation and sends a fresh id, which is the duplicate the
+    # reservation exists to prevent.
+    it 'retires the send failure of a message the echo proves arrived' do
+      sent = create(:message, inbox: inbox, conversation: conversation, message_type: :outgoing,
+                              content: '**John** olá', source_id: nil, status: :failed,
+                              external_error: 'send timed out',
+                              content_attributes: { pending_source_id: 'RESERVED_5' })
+
+      Whatsapp::IncomingMessageBaileysService.new(inbox: inbox, params: echo_params('RESERVED_5')).perform
+
+      expect(sent.reload.source_id).to eq('RESERVED_5')
+      expect(sent.status).to eq('sent')
+      expect(sent.external_error).to be_blank
     end
 
     it 'keeps the source_id already confirmed by the send response' do

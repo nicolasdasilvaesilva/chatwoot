@@ -58,6 +58,38 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
 
       send_session_message
     end
+  rescue Whatsapp::Session::Errors::Error => e
+    # A refusal the provider will repeat, or a send whose outcome nobody can determine.
+    # Letting it escape leaves the bubble reading "sent" while the job retries something
+    # that cannot work and then dies in the dead set, so the reason goes on the message
+    # instead — the agent sees it and can act. Only an error that might answer
+    # differently next time is worth raising for. Mirrors
+    # Whatsapp::Session::Outbound::MessageSender, which already does this for the
+    # session providers.
+    raise if e.retryable?
+    # A processing conflict is not retryable by the definition retryable? uses — the
+    # same command is not going to answer differently, because we are not the one
+    # running it. But the MESSAGE is still on its way out through the worker holding
+    # the lock, so failing it here would be a lie, and it would swallow the dedicated
+    # backoff SendReplyJob has for exactly this conflict.
+    raise if e.code == Whatsapp::Session::Errors::MessageAlreadyProcessing::CODE
+
+    fail_message(e)
+  end
+
+  # Through StatusTransition, which owns the rule and applies it under the row lock.
+  # Writing status/external_error directly here would be the third copy of that rule,
+  # and the two that already existed had drifted apart — but more concretely: a send
+  # that timed out may still have reached WhatsApp, so a receipt can mark this message
+  # delivered or read while we are deciding it failed. delivered/read are terminal, and
+  # walking one back to failed invites the agent to send a duplicate.
+  def fail_message(error)
+    message.reload
+    # error.message, not the exception: StatusTransition appends the wire code when it
+    # is handed an exception, and external_error is the sentence the agent reads on the
+    # bubble. The code is already in the logs.
+    Whatsapp::Session::Inbound::StatusTransition.fail_send(message, error.message)
+    nil
   end
 
   def validate_announcement_mode!
@@ -98,8 +130,11 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   def persist_source_id(message_id)
     return if message_id.blank?
 
-    message.update_under_lock!(source_id: message_id)
-    return unless message.deleted?
+    # Only whoever assigns the id owns the revoke: a session inbox has a second writer of
+    # this column, the echo of our own send, and both of them seeing `deleted` would ask
+    # the provider to revoke the same message twice. The assignment and that decision
+    # share one row lock, which is what makes the answer unambiguous.
+    return unless Whatsapp::Session::Outbound::SourceIdReservation.assign(message, { source_id: message_id }) == :revoke
 
     ::Messages::DeleteOnChannelJob.perform_later(message.id)
   end
@@ -107,11 +142,12 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   # Reads the flag straight from the database: a full `message.reload` would also drop the cached
   # conversation/inbox/channel chain this service leans on.
   def deleted_in_database?
-    Message.select(:id, :content_attributes).find_by(id: message.id)&.deleted?
+    stored = Message.select(:id, :content_attributes).find_by(id: message.id)
+    stored.present? && stored.deleted? && !stored.removed_reaction?
   end
 
   def recipient_id
-    return message.conversation.contact_inbox.source_id unless %w[baileys zapi].include?(channel.provider)
+    return message.conversation.contact_inbox.source_id unless channel.session_family?
 
     # NOTE: `identifier` must be in the WhatsApp LID format
     message.conversation.contact.phone_number&.gsub(/[^\d]/, '') || message.conversation.contact.identifier

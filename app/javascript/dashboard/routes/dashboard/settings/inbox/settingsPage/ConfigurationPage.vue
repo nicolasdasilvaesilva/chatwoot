@@ -17,6 +17,8 @@ import TextArea from 'next/textarea/TextArea.vue';
 import { sanitizeAllowedDomains, isValidURL } from 'dashboard/helper/URLHelper';
 import { requiredIf } from '@vuelidate/validators';
 import WhatsappLinkDeviceModal from '../components/WhatsappLinkDeviceModal.vue';
+import SessionProviderConfiguration from './SessionProviderConfiguration.vue';
+import WhatsappHistorySync from './WhatsappHistorySync.vue';
 import WhatsappBusinessManagementToken from './WhatsappBusinessManagementToken.vue';
 import InboxName from 'dashboard/components/widgets/InboxName.vue';
 import Switch from 'dashboard/components-next/switch/Switch.vue';
@@ -32,6 +34,8 @@ export default {
     NextButton,
     TextArea,
     WhatsappLinkDeviceModal,
+    SessionProviderConfiguration,
+    WhatsappHistorySync,
     WhatsappBusinessManagementToken,
     InboxName,
     // eslint-disable-next-line vue/no-reserved-component-names
@@ -73,9 +77,8 @@ export default {
   validations() {
     return {
       whatsAppInboxAPIKey: {
-        requiredIf: requiredIf(
-          !this.isAWhatsAppBaileysChannel && !this.isAWhatsAppZapiChannel
-        ),
+        // A session provider pairs with a phone; there is no API key to ask for.
+        requiredIf: requiredIf(!this.isASessionWhatsAppChannel),
       },
       baileysProviderUrl: { isValidURL: value => !value || isValidURL(value) },
       zapiInstanceIdUpdate: {},
@@ -642,6 +645,14 @@ export default {
       </SettingsFieldSection>
     </div>
   </div>
+  <SessionProviderConfiguration
+    v-else-if="
+      isASessionWhatsAppChannel &&
+      !isAWhatsAppBaileysChannel &&
+      !isAWhatsAppZapiChannel
+    "
+    :inbox="inbox"
+  />
   <div v-else-if="isAWhatsAppBaileysChannel">
     <WhatsappLinkDeviceModal
       v-if="showLinkDeviceModal"
@@ -678,6 +689,7 @@ export default {
           </NextButton>
         </div>
       </SettingsSection>
+      <WhatsappHistorySync :inbox="inbox" />
       <SettingsSection
         :title="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_PROVIDER_URL_TITLE')"
         :sub-title="

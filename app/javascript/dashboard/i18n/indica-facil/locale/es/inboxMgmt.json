@@ -7,7 +7,11 @@
           "BAILEYS": "Baileys",
           "BAILEYS_DESC": "Conectar mediante la API no oficial Baileys",
           "ZAPI": "Z-API",
-          "ZAPI_DESC": "Conectar mediante la API no oficial Z-API"
+          "ZAPI_DESC": "Conectar mediante la API no oficial Z-API",
+          "NATIVE": "WhatsApp (nativo)",
+          "NATIVE_DESC": "Conectar mediante una API no oficial, con el conector que ya viene en esta instalación",
+          "UAZAPI": "Uazapi",
+          "UAZAPI_DESC": "Conectar mediante la API no oficial de Uazapi, en tu propia instancia"
         },
         "PROVIDER_URL": {
           "LABEL": "URL del proveedor",
@@ -41,8 +45,15 @@
           "LINK_BUTTON": "Vincular dispositivo",
           "LINK_DEVICE_MODAL": {
             "TITLE": "Vincule su dispositivo",
-            "SUBTITLE": "Escanee el código QR para vincular su dispositivo. Verifique que el número de teléfono sea correcto antes de escanear.",
+            "SUBTITLE": "Vincule su dispositivo a esta bandeja de entrada. Verifique que el número de teléfono sea correcto antes de empezar.",
             "LOADING_QRCODE": "Cargando el código QR...",
+            "USE_PAIRING_CODE": "Vincular con un código",
+            "USE_QRCODE": "Usar el código QR",
+            "LOADING_PAIRING_CODE": "Solicitando un código...",
+            "PAIRING_CODE_STEP_1": "En el teléfono que va a atender, abre WhatsApp.",
+            "PAIRING_CODE_STEP_2": "Ve a Dispositivos vinculados y toca Vincular un dispositivo.",
+            "PAIRING_CODE_STEP_3": "Toca \"Vincular con número de teléfono\" e ingresa el código de arriba.",
+            "PAIRING_CODE_EXPIRES": "El código dura unos minutos. Pide otro si caduca.",
             "RECONNECTING": "Conectando...",
             "LINK_DEVICE": "Vincular dispositivo",
             "DISCONNECT": "Desconectar",
@@ -51,6 +62,32 @@
             "IMPORT_SESSION_SHOW_MORE": "Ver más",
             "IMPORT_SESSION_DESC": "WhatsApp ahora exige una clave de acceso al vincular algunas cuentas, lo que bloquea el código QR. Instale la extensión del navegador para importar una sesión que ya tenga iniciada en WhatsApp Web.",
             "IMPORT_SESSION_INSTALL": "Instalar la extensión"
+          }
+        },
+        "SESSION": {
+          "FIELDS": {
+            "BASE_URL": {
+              "LABEL": "URL de la instancia",
+              "PLACEHOLDER": "https://tu-instancia.uazapi.com",
+              "ERROR": "Indica la dirección de tu instancia"
+            },
+            "TOKEN": {
+              "LABEL": "Token de la instancia",
+              "PLACEHOLDER": "Pega el token de la instancia que quieres usar",
+              "ERROR": "El token de la instancia es obligatorio"
+            },
+            "MARK_AS_READ": {
+              "LABEL": "Marcar mensajes como leídos en WhatsApp",
+              "DESCRIPTION": "Al responder desde Chatwoot, la conversación también aparece como leída en el teléfono."
+            },
+            "PRESENCE_SUBSCRIBE": {
+              "LABEL": "Mostrar cuándo el contacto está en línea",
+              "DESCRIPTION": "Muestra “escribiendo…” y “grabando…” en la conversación mientras el contacto escribe."
+            },
+            "HISTORY_SYNC": {
+              "LABEL": "Importar conversaciones antiguas al vincular",
+              "DESCRIPTION": "Trae el historial que el teléfono ofrece al vincular, todo como conversaciones resueltas. Los mensajes recibidos mientras la conexión estuvo caída se recuperan igual."
+            }
           }
         }
       }
@@ -139,7 +176,9 @@
     },
     "CHANNELS": {
       "WHATSAPP_BAILEYS": "WhatsApp - Baileys",
-      "WHATSAPP_ZAPI": "WhatsApp - Z-API"
+      "WHATSAPP_ZAPI": "WhatsApp - Z-API",
+      "WHATSAPP_NATIVE": "WhatsApp - nativo",
+      "WHATSAPP_UAZAPI": "WhatsApp - Uazapi"
     }
   }
 }

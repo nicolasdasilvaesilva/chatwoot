@@ -4,10 +4,16 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   include HmacConcern
   include ConversationCustomAttributesConcern
 
-  before_action :conversation, except: [:index, :meta, :search, :create, :filter, :presence_subscribe_bulk, :pins, :unpin]
+  before_action :conversation, except: [:index, :meta, :sync, :search, :create, :filter, :presence_subscribe_bulk, :pins, :unpin]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
 
   ATTACHMENT_RESULTS_PER_PAGE = 100
+  # One page of conversations, the same unit the index endpoint serializes at. The partial does
+  # per-row work (unread counts, the last non-activity message), so an uncapped list would let any
+  # authenticated agent ask one worker to render the whole account. The dashboard chunks to match,
+  # and an oversized batch is refused rather than truncated: a truncated answer is indistinguishable
+  # from "these conversations are gone" to a caller that reconciles against it.
+  SYNC_BATCH_SIZE = 25
 
   def index
     result = conversation_finder.perform
@@ -18,6 +24,27 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def meta
     result = conversation_finder.perform_meta_only
     @conversations_count = result[:count]
+  end
+
+  # The current state of the conversations the caller names, and nothing else. The dashboard asks
+  # when its own list is longer than the count the server reports for a tab, a contradiction it
+  # cannot resolve on its own: nothing in the store ever removes a conversation that left a tab, so
+  # a single missed cable event leaves a stale copy behind forever.
+  #
+  # Deliberately ignores every tab filter, and that is the whole point: the caller is asking what
+  # these conversations ARE, and the ones it is asking after are precisely the ones that stopped
+  # matching its filters. What comes back replaces the stale rows, so they leave the tab through
+  # their own data while keeping whatever other tab they still belong to. Whatever does not come
+  # back is gone for this agent, deleted or no longer permitted, and the caller drops it.
+  #
+  # POST, and scoped to the ids it was given, so the answer can never outgrow the question: the
+  # count that triggers the ask can itself be stale (a debounced meta answering for the filter
+  # before last), so the tab can be far larger than the handful the client has on screen.
+  def sync
+    ids = permitted_conversation_ids
+    return render_could_not_create_error("ids must contain at most #{SYNC_BATCH_SIZE} entries") if ids.size > SYNC_BATCH_SIZE
+
+    @conversations = conversation_finder.perform_sync(ids)
   end
 
   def search
@@ -184,6 +211,32 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     update_last_seen_on_conversation(last_seen_at, true)
   end
 
+  # Asks the phone for the page before the oldest message this thread holds.
+  #
+  # Scoped to the conversation because that is the shape of the thing being asked: the
+  # provider walks one chat backwards from one anchor, and the operator asking is the one
+  # reading that chat. Nothing here waits for messages -- the phone answers on the webhook
+  # later, or never, so what the caller is told is that the request went out.
+  def sync_history
+    channel = @conversation.inbox.channel
+
+    unless channel.try(:session_capabilities)&.include?('history_sync')
+      render json: { error: 'Inbox does not support history sync' }, status: :unprocessable_entity and return
+    end
+
+    # The request travels to the phone through the session, so a closed one has nothing to
+    # carry it and the operator would be told it was asked for nothing.
+    unless channel.provider_connection.to_h['connection'] == 'open'
+      render json: { error: 'Inbox is not connected' }, status: :unprocessable_entity and return
+    end
+
+    # Held for the providers that do not classify their frames: a Baileys answer identifies
+    # itself as ON_DEMAND, uazapi's does not, and this is what tells that one somebody asked.
+    Whatsapp::Session::HistoryBackfill.open!(channel)
+    Whatsapp::Session::ConversationHistoryJob.perform_later(@conversation)
+    head :ok
+  end
+
   def destroy
     authorize @conversation, :destroy?
     ::Conversations::DeleteService.new(conversation: @conversation, user: Current.user, ip: request.ip).perform
@@ -290,12 +343,16 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
       inbox: @inbox,
       source_id: params[:source_id],
       hmac_verified: hmac_verified?,
-      validate_baileys_phone: true
+      validate_whatsapp_phone: true
     ).perform
   end
 
   def conversation_finder
     @conversation_finder ||= ConversationFinder.new(Current.user, params)
+  end
+
+  def permitted_conversation_ids
+    Array(params[:ids]).map(&:to_i)
   end
 
   def assignee?
