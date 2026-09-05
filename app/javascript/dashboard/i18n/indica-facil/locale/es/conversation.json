@@ -15,7 +15,9 @@
       "GROUPS_DISABLED_RESTRICTED": "Los mensajes de grupo están desactivados: actívelos gratis"
     },
     "REPLYBOX": {
-      "SCHEDULE_SEND": "Programar envío"
+      "SCHEDULE_SEND": "Programar envío",
+      "ATTACHMENT_DISCARDED_ON_MODE_CHANGE": "El archivo adjunto se descartó porque la conversación cambió entre nota y respuesta.",
+      "RECORDING_DISCARDED_ON_MODE_CHANGE": "La grabación se descartó porque la conversación cambió entre nota y respuesta."
     },
     "ASSIGNMENT_CONFLICT": {
       "TITLE": "La conversación ya está asignada",
@@ -25,6 +27,7 @@
     },
     "CHANGE_TEAM_FAILED": "No se pudo cambiar el equipo",
     "MESSAGE_DELETED_BY_CONTACT": "Eliminado por el contacto",
+    "MASKED_MESSAGE_WHATSAPP": "WhatsApp no entrega códigos de verificación a los dispositivos vinculados. Este mensaje solo se puede leer en el teléfono vinculado.",
     "WHATSAPP": "WhatsApp",
     "CONTEXT_MENU": {
       "EDIT": {
